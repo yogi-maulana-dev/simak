@@ -2,6 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 
+use App\Livewire\Arsip\Index;
+
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -16,3 +19,5 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+ Route::get('/arsip', Index::class)->name('arsip.index');

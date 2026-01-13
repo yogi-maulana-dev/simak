@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class Arsip extends Model
 {
     use HasFactory;
+
+       protected $table = 'arsip';
+       
     protected $fillable = [
         'judul',
         'file',
@@ -54,5 +57,5 @@ public function scopeVisibleFor($query, $user)
 
     return $query->whereRaw('1=0');
 }
-
+ 
 }
