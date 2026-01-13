@@ -9,7 +9,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class Index extends Component
 {
-  use WithPagination, AuthorizesRequests;
+    use WithPagination, AuthorizesRequests;
 
     public string $search = '';
     public int $perPage = 10;
@@ -17,10 +17,11 @@ class Index extends Component
     public function render()
     {
         return view('livewire.arsip.index', [
-            'arsips' => Arsip::query()
+            'arsips' => Arsip::visibleFor(auth()->user())
                 ->where('judul', 'like', "%{$this->search}%")
                 ->latest()
                 ->paginate($this->perPage)
-        ]);
+        ])->layout('layouts.app');
     }
 }
+
