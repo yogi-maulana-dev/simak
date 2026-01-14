@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class Prodi extends Model
 {
     use HasFactory;
+          protected $table = 'prodi';
 
-    protected $fillable = ['nama', 'fakultas_id'];
+    protected $fillable = ['nama_prodi', 'fakultas_id'];
 
     public function fakultas()
     {

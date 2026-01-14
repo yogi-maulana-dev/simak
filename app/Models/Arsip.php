@@ -2,60 +2,68 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 class Arsip extends Model
 {
-    use HasFactory;
+    protected $table = 'arsip';
 
-       protected $table = 'arsip';
-       
     protected $fillable = [
         'judul',
+        'deskripsi',
         'file',
-        'kategori_id',
-        'fakultas_id',
-        'prodi_id',
-        'user_id'
+        'user_id',
     ];
 
-    public function kategori()
+    public function dataFakultas()
     {
-        return $this->belongsTo(Kategori::class);
-    }
-
-    public function fakultas()
-    {
-        return $this->belongsTo(Fakultas::class);
-    }
-
-    public function prodi()
-    {
-        return $this->belongsTo(Prodi::class);
+        return $this->hasMany(DataFakultas::class, 'arsip_id', 'id');
     }
 
     public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    // app/Models/Arsip.php
-public function scopeVisibleFor($query, $user)
 {
-    if ($user->isSuperAdmin() || $user->hasRole('admin_univ')) {
-        return $query;
-    }
-
-    if ($user->hasRole('admin_fakultas') || $user->hasRole('asesor_fakultas')) {
-        return $query->where('fakultas_id', $user->fakultas_id);
-    }
-
-    if ($user->hasRole('admin_prodi') || $user->hasRole('asesor_prodi')) {
-        return $query->where('prodi_id', $user->prodi_id);
-    }
-
-    return $query->whereRaw('1=0');
+    return $this->belongsTo(User::class, 'user_id');
 }
- 
+
+
+    /**
+     * Scope filter arsip sesuai role user
+     */
+    public function scopeVisibleFor(Builder $query, $user)
+    {
+        // 🔥 SUPERADMIN → lihat semua
+        if ($user->role->name === 'superadmin') {
+            return $query;
+        }
+
+        // 👁️ ASESOR → lihat sesuai fakultas
+        if ($user->role->name === 'asesor') {
+            return $query->whereHas('dataFakultas', function ($q) use ($user) {
+                $q->where('fakultas_id', $user->fakultas_id);
+            });
+        }
+
+        // 👤 USER / ADMIN → hanya arsip sendiri
+        return $query->where('user_id', $user->id);
+    }
+
+
+    public function getFakultasIdAttribute()
+    {
+        $dataFakultas = $this->dataFakultas->first();
+        return $dataFakultas ? $dataFakultas->fakultas_id : null;
+    }
+    
+    /**
+     * Get prodi_id (jika ada relasi serupa)
+     */
+    public function getProdiIdAttribute()
+    {
+        // Sesuaikan dengan struktur Anda
+        return null;
+    }
+
+    
 }

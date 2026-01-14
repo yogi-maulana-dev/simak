@@ -21,9 +21,9 @@
             <x-input-label for="password" :value="__('Password')" />
 
             <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="new-password" />
+                type="password"
+                name="password"
+                required autocomplete="new-password" />
 
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
@@ -33,11 +33,40 @@
             <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
 
             <x-text-input id="password_confirmation" class="block mt-1 w-full"
-                            type="password"
-                            name="password_confirmation" required autocomplete="new-password" />
+                type="password"
+                name="password_confirmation" required autocomplete="new-password" />
 
             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
         </div>
+
+          <div class="mt-4">
+        <select name="role" id="role" required>
+            <option value="">-- Pilih Role --</option>
+            <option value="3">Admin Fakultas</option>
+            <option value="4">Admin Prodi</option>
+            <option value="5">Asesor Fakultas</option>
+        </select>
+          </div>
+
+            <div class="mt-4">
+        <select name="fakultas_id" id="fakultas">
+              <option value="">-- Pilih Fakultas --</option>
+            @foreach($fakultas as $f)
+            <option value="{{ $f->id }}">{{ $f->nama_fakultas }}</option>
+            @endforeach
+        </select>
+            </div>
+
+
+  <div class="mt-4">
+        <select name="prodi_id" id="prodi">
+              <option value="">-- Pilih Prodi --</option>
+            @foreach($prodi as $p)
+            <option value="{{ $p->id }}">{{ $p->nama_prodi }}</option>
+            @endforeach
+        </select>
+  </div>
+
 
         <div class="flex items-center justify-end mt-4">
             <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}">
@@ -49,4 +78,22 @@
             </x-primary-button>
         </div>
     </form>
+
+    <script>
+document.getElementById('fakultas').addEventListener('change', function () {
+    let fakultasId = this.value;
+
+    fetch('/get-prodi/' + fakultasId)
+        .then(res => res.json())
+        .then(data => {
+            let prodi = document.getElementById('prodi');
+            prodi.innerHTML = '<option value="">-- Pilih Prodi --</option>';
+
+            data.forEach(p => {
+                prodi.innerHTML += `<option value="${p.id}">${p.nama_prodi}</option>`;
+            });
+        });
+});
+</script>
+
 </x-guest-layout>
