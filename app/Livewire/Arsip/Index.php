@@ -152,6 +152,15 @@ public function download(int $id): StreamedResponse
 
     abort(404, 'File tidak ditemukan');
 }
+
+   public function mount()
+    {
+        if (auth()->user()->role->name === 'superadmin') {
+            Log::warning('Super Admin mencoba akses arsip', ['user_id' => auth()->id()]);
+            abort(403, 'Maaf, Anda tidak bisa akses halaman ini');
+        }
+    }
+    
     public function render()
     {
         // Query dasar dengan hak akses

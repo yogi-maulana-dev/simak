@@ -42,6 +42,8 @@
           <div class="mt-4">
         <select name="role" id="role" required>
             <option value="">-- Pilih Role --</option>
+            <option value="1">Super Admin</option>
+            <option value="2">Admin Univ</option>
             <option value="3">Admin Fakultas</option>
             <option value="4">Admin Prodi</option>
             <option value="5">Asesor Fakultas</option>

@@ -4,9 +4,8 @@ namespace App\Providers;
 
 use App\Models\Arsip;
 use App\Policies\ArsipPolicy;
-
-// use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\Gate;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -16,8 +15,7 @@ class AuthServiceProvider extends ServiceProvider
      * @var array<class-string, class-string>
      */
     protected $policies = [
-        //
-         Arsip::class => ArsipPolicy::class,
+        Arsip::class => ArsipPolicy::class,
     ];
 
     /**
@@ -25,6 +23,22 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        $this->registerPolicies();
+
+        // Gate untuk akses halaman arsip
+        Gate::define('access-arsip', function ($user) {
+            // Super Admin tidak boleh akses halaman list
+            if ($user->role->name === 'superadmin') {
+                return false;
+            }
+
+            // Semua role lain boleh
+            return in_array($user->role->name, [
+                'admin_univ',
+                'admin_fakultas',
+                'admin_prodi',
+                'asesor'
+            ]);
+        });
     }
 }

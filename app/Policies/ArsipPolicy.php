@@ -4,122 +4,105 @@ namespace App\Policies;
 
 use App\Models\Arsip;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class ArsipPolicy
 {
-    /**
-     * SUPERADMIN & ADMIN UNIV → FULL AKSES
-     */
-    private function isGlobalSuperAdmin(User $user)
+    private function roleId(User $user)
     {
-        return $user->hasRole('superadmin') || $user->hasRole('admin_univ');
+        return optional($user->role)->id;
     }
 
-    private function isGlobalAdmin(User $user)
+    private function isSuperAdmin(User $user)   { return $this->roleId($user) == 1; }
+    private function isAdminUniv(User $user)    { return $this->roleId($user) == 2; }
+    private function isAdminFakultas(User $user){ return $this->roleId($user) == 3; }
+    private function isAdminProdi(User $user)   { return $this->roleId($user) == 4; }
+    private function isAsesorFakultas(User $user){ return $this->roleId($user) == 5; }
+
+    private function isOwner(User $user, Arsip $arsip)
     {
-        return
-            $user->hasRole('admin_univ') ||
-            $user->hasRole('admin_fakultas') ||
-            $user->hasRole('admin_prodi');
+        return $arsip->user_id == $user->id;
     }
 
-
-
-    /**
-     * Cek apakah arsip terkait dengan fakultas user
-     */
     private function isInUserFakultas(User $user, Arsip $arsip)
     {
-        return $arsip->dataFakultas()
-            ->where('fakultas_id', $user->fakultas_id)
-            ->exists();
+        return $arsip->fakultas_id == $user->fakultas_id;
     }
 
-    /**
-     * Cek apakah arsip terkait dengan prodi user
-     */
     private function isInUserProdi(User $user, Arsip $arsip)
     {
-        // Jika ada relasi dataProdi
-        return $arsip->dataProdi()
-            ->where('prodi_id', $user->prodi_id)
-            ->exists();
-        // Atau jika prodi melalui fakultas
+        return $arsip->prodi_id == $user->prodi_id;
     }
 
-    /**
-     * VIEW LIST / DETAIL
-     */
-    public function view(User $user, Arsip $arsip)
+    //==============================================
+
+    public function viewAny(User $user)
     {
-        if ($this->isGlobalAdmin($user)) {
-            return true;
-        }
-
-        if ($user->hasRole('admin_fakultas') || $user->hasRole('asesor_fakultas')) {
-            return $this->isInUserFakultas($user, $arsip);
-        }
-
-        if ($user->hasRole('admin_prodi') || $user->hasRole('asesor_prodi')) {
-            return $this->isInUserProdi($user, $arsip);
-        }
-
-        return false;
-    }
-
-    /**
-     * CREATE
-     */
-    public function create(User $user)
-    {
-        return ! $user->hasRole('asesor_fakultas')
-            && ! $user->hasRole('asesor_prodi');
-    }
-
-    /**
-     * UPDATE
-     */
-    public function update(User $user, Arsip $arsip)
-    {
-        if ($this->isGlobalAdmin($user)) {
-            return true;
-        }
-
-        if ($user->hasRole('admin_fakultas')) {
-            return $this->isInUserFakultas($user, $arsip);
-        }
-
-        if ($user->hasRole('admin_prodi')) {
-            return $this->isInUserProdi($user, $arsip);
-        }
-
-        return false;
-    }
-
-    /**
-     * DELETE
-     */
-   // Tambahkan method ini di ArsipPolicy
-public function viewAny(User $user)
-{
-    // Semua user yang login bisa melihat daftar
-    return true;
-}
-
-// Perbaiki method delete untuk lebih spesifik
-public function delete(User $user, Arsip $arsip)
-{
-    // Hanya superadmin & admin univ bisa delete
-    if ($user->hasRole('superadmin') || $user->hasRole('admin_univ')) {
         return true;
     }
 
-    // Admin fakultas hanya bisa delete arsip di fakultasnya
-    if ($user->hasRole('admin_fakultas')) {
-        return $this->isInUserFakultas($user, $arsip);
+    public function view(User $user, Arsip $arsip)
+    {
+        if ($this->isSuperAdmin($user)) {
+            return true;
+        }
+
+        if ($this->isAdminUniv($user) || $this->isAsesorFakultas($user) || $this->isAdminProdi($user)) {
+            return $this->isOwner($user, $arsip);
+        }
+
+        if ($this->isAdminFakultas($user)) {
+            return $this->isInUserFakultas($user, $arsip);
+        }
+
+        return false;
     }
 
-    return false;
-}
+    public function create(User $user)
+    {
+        // asesor tidak boleh create
+        return ! $this->isAsesorFakultas($user);
+    }
+
+    public function update(User $user, Arsip $arsip)
+    {
+        if ($this->isSuperAdmin($user)) {
+            return true;
+        }
+
+        if ($this->isAdminUniv($user) || $this->isAdminProdi($user) || $this->isAsesorFakultas($user)) {
+            return $this->isOwner($user, $arsip);
+        }
+
+        if ($this->isAdminFakultas($user)) {
+            return $this->isInUserFakultas($user, $arsip);
+        }
+
+        return false;
+    }
+
+    public function delete(User $user, Arsip $arsip)
+    {
+        // Super Admin → TIDAK BOLEH DELETE
+        if ($this->isSuperAdmin($user)) {
+            return false;
+        }
+
+        // Admin Univ → hanya arsip miliknya
+        if ($this->isAdminUniv($user)) {
+            return $this->isOwner($user, $arsip);
+        }
+
+        // Admin Fakultas → arsip fakultasnya
+        if ($this->isAdminFakultas($user)) {
+            return $this->isInUserFakultas($user, $arsip);
+        }
+
+        // Admin Prodi → arsip miliknya sendiri
+        if ($this->isAdminProdi($user)) {
+            return $this->isOwner($user, $arsip);
+        }
+
+        // Asesor → tidak boleh delete
+        return false;
+    }
 }

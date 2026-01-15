@@ -8,6 +8,8 @@ use App\Livewire\Arsip\Create as ArsipCreate;
 use App\Livewire\Arsip\Edit as ArsipEdit;
 use App\Livewire\Arsip\Show as ArsipShow;
 use App\Livewire\Arsip\Delete as ArsipDelete;
+use Illuminate\Support\Facades\Gate;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -40,13 +42,13 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Arsip Routes
-    Route::prefix('arsip')->name('arsip.')->group(function () {
-        Route::get('/', ArsipIndex::class)->name('index');
-        Route::get('/create', ArsipCreate::class)->name('create');
-    
-        Route::get('/{arsip}/edit', ArsipEdit::class)->name('edit');
-    
-    });
+
+Route::prefix('arsip')->name('arsip.')->middleware(['auth', 'can:access-arsip'])->group(function () {
+    Route::get('/', ArsipIndex::class)->name('index');
+    Route::get('/create', ArsipCreate::class)->name('create');
+    Route::get('/{arsip}/edit', ArsipEdit::class)->name('edit');
+});
+
 });
 
 require __DIR__.'/auth.php';
