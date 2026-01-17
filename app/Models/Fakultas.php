@@ -10,13 +10,20 @@ class Fakultas extends Model
     use HasFactory;
      protected $fillable = ['nama_fakultas'];
 
-    public function prodis()
+ public function prodis()
     {
         return $this->hasMany(Prodi::class);
     }
 
-    public function arsips()
+    // Relasi ke users yang memiliki fakultas ini
+    public function users()
     {
-        return $this->hasMany(Arsip::class);
+        return $this->hasMany(User::class);
+    }
+
+    // Relasi ke DataFakultas (tabel pivot arsip-fakultas)
+    public function dataFakultas()
+    {
+        return $this->hasMany(DataFakultas::class);
     }
 }

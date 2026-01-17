@@ -13,11 +13,7 @@ class User extends Authenticatable
 {
     protected $fillable = ['name', 'email', 'password','role_id','fakultas_id','prodi_id'];
 
-    public function role()
-    {
-        return $this->belongsTo(Role::class);
-    }
-
+  
 
     public function arsips()
     {
@@ -29,35 +25,38 @@ class User extends Authenticatable
     return $this->belongsTo(Fakultas::class, 'fakultas_id');
 }
 
-
-
-       // ===== HELPER ROLE =====
-  public function hasRole($role): bool
-{
-    if (is_array($role)) {
-        // Jika role adalah array, cek apakah user memiliki salah satu role
-        return $this->role && in_array($this->role->name, $role);
-    }
-    
-    // Jika role adalah string
-    return $this->role && $this->role->name === $role;
-}
-
-public function hasAnyRole(array $roles): bool
-{
-    return $this->role && in_array($this->role->name, $roles);
-}
-
-public function hasAllRoles(array $roles): bool
-{
-    // Karena user hanya punya satu role, tidak mungkin punya semua role
-    // Tapi untuk konsistensi API
-    return $this->role && in_array($this->role->name, $roles) && count($roles) === 1;
-}
-
-    public function isSuperAdmin()
+    // Tambahkan relasi prodi
+    public function prodi()
     {
-        return $this->hasRole('superadmin');
+        return $this->belongsTo(Prodi::class, 'prodi_id');
     }
+
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    // Helper methods
+    public function isSuperadmin()
+    {
+        return $this->role_id === 1 || ($this->role && $this->role->name === 'superadmin');
+    }
+
+    public function isUser()
+    {
+        return $this->role_id === 3 || ($this->role && $this->role->name === 'user');
+    }
+
+    public function hasRole($roleName)
+    {
+        return $this->role && $this->role->name === $roleName;
+    }
+
+    public function hasRoleId($roleId)
+    {
+        return $this->role_id == $roleId;
+    }
+
 }
 

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Arsip;
+use App\Models\Fakultas;
 use Illuminate\Database\Eloquent\Model;
 
 class DataFakultas extends Model
@@ -16,4 +18,14 @@ class DataFakultas extends Model
         'fakultas_id',
         'role_id',
     ];
+
+        public function arsip()
+    {
+        return $this->belongsTo(Arsip::class);
+    }
+
+    public function fakultas()
+    {
+        return $this->belongsTo(Fakultas::class);
+    }
 }
