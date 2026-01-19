@@ -58,5 +58,33 @@ class User extends Authenticatable
         return $this->role_id == $roleId;
     }
 
+     
+
+    /**
+     * Scope untuk user yang memiliki fakultas.
+     */
+    public function scopeHasFakultas($query)
+    {
+        return $query->whereNotNull('fakultas_id');
+    }
+
+    /**
+     * Scope untuk user yang memiliki prodi.
+     */
+    public function scopeHasProdi($query)
+    {
+        return $query->whereNotNull('prodi_id');
+    }
+
+    /**
+     * Scope untuk user berdasarkan role.
+     */
+    public function scopeByRole($query, $roleName)
+    {
+        return $query->whereHas('role', function($q) use ($roleName) {
+            $q->where('name', $roleName);
+        });
+    }
+
 }
 

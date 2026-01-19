@@ -26,7 +26,7 @@
                             {{-- Judul --}}
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700">Judul Arsip *</label>
-                                <input type="text" wire:model="judul" 
+                                <input type="text" wire:model.live="judul" 
                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                                 @error('judul') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
@@ -39,46 +39,81 @@
                                 @error('deskripsi') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
 
-                            {{-- Fakultas --}}
+                            {{-- User --}}
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Uploader *</label>
+                                <select wire:model.live="user_id" 
+                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Pilih User</option>
+                                    @foreach($users as $user)
+                                        <option value="{{ $user->id }}">
+                                            {{ $user->name }} 
+                                            ({{ $user->email }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('user_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
+
+                            {{-- Fakultas (Read-only/auto-filled) --}}
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Fakultas *</label>
                                 <select wire:model="fakultas_id" 
-                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                        {{ $user_id ? 'disabled' : '' }}
+                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-50">
                                     <option value="">Pilih Fakultas</option>
                                     @foreach($fakultas as $f)
-                                        <option value="{{ $f->id }}">{{ $f->nama_fakultas }}</option>
+                                        <option value="{{ $f->id }}" 
+                                                @if($selectedUser && $selectedUser->fakultas_id == $f->id) 
+                                                    class="font-bold text-blue-600"
+                                                @endif>
+                                            {{ $f->nama_fakultas }}
+                                            @if($selectedUser && $selectedUser->fakultas_id == $f->id) 
+                                                (sesuai user)
+                                            @endif
+                                        </option>
                                     @endforeach
                                 </select>
                                 @error('fakultas_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                
+                                {{-- Info bahwa fakultas diisi otomatis --}}
+                                @if($user_id && $selectedUser && $selectedUser->fakultas_id)
+                                    <p class="mt-1 text-sm text-blue-600">
+                                        ✓ Fakultas diisi otomatis sesuai user
+                                    </p>
+                                @endif
                             </div>
 
-                            {{-- Prodi --}}
+                            {{-- Program Studi (Read-only/auto-filled) --}}
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Program Studi</label>
                                 <select wire:model="prodi_id" 
-                                        {{ !$fakultas_id ? 'disabled' : '' }}
-                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 {{ !$fakultas_id ? 'bg-gray-100' : '' }}">
+                                        wire:loading.attr="disabled"
+                                        {{ $user_id ? 'disabled' : '' }}
+                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-50">
                                     <option value="">Pilih Prodi</option>
                                     @if($fakultas_id)
                                         @foreach($prodiOptions as $prodi)
-                                            <option value="{{ $prodi->id }}">{{ $prodi->nama_prodi }}</option>
+                                            <option value="{{ $prodi->id }}"
+                                                    @if($selectedUser && $selectedUser->prodi_id == $prodi->id) 
+                                                        class="font-bold text-blue-600"
+                                                    @endif>
+                                                {{ $prodi->nama_prodi }}
+                                                @if($selectedUser && $selectedUser->prodi_id == $prodi->id) 
+                                                    (sesuai user)
+                                                @endif
+                                            </option>
                                         @endforeach
                                     @endif
                                 </select>
                                 @error('prodi_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                            </div>
-
-                            {{-- User --}}
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Uploader *</label>
-                                <select wire:model="user_id" 
-                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="">Pilih User</option>
-                                    @foreach($users as $user)
-                                        <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
-                                    @endforeach
-                                </select>
-                                @error('user_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                
+                                {{-- Info bahwa prodi diisi otomatis --}}
+                                @if($user_id && $selectedUser && $selectedUser->prodi_id)
+                                    <p class="mt-1 text-sm text-blue-600">
+                                        ✓ Prodi diisi otomatis sesuai user
+                                    </p>
+                                @endif
                             </div>
 
                             {{-- File Upload --}}
@@ -92,19 +127,7 @@
                                 @endif
                             </div>
 
-                            {{-- Thumbnail --}}
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700">Thumbnail (Opsional)</label>
-                                <input type="file" wire:model="thumbnail" accept="image/*"
-                                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                                @error('thumbnail') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                @if($thumbnail)
-                                    <div class="mt-2">
-                                        <img src="{{ $thumbnail->temporaryUrl() }}" alt="Preview" class="h-32 w-auto rounded">
-                                    </div>
-                                @endif
-                            </div>
-
+                        
                             {{-- Public Access --}}
                             <div class="md:col-span-2">
                                 <div class="flex items-center">

@@ -6,67 +6,82 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\Arsip;
 use App\Models\Fakultas;
-use App\Models\Prodi;
 use App\Models\User;
+use App\Models\DataFakultas;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\Gd\Driver;
+use Illuminate\Support\Str;
 
 class Edit extends Component
 {
     use WithFileUploads;
 
-    public Arsip $arsip;
-    public $judul;
-    public $deskripsi;
-    public $fakultas_id;
-    public $prodi_id;
-    public $user_id;
-    public $newFile;
-    public $newThumbnail;
-    public $is_public;
-    public $prodiOptions = [];
+    public $arsipId;
+    public $judul = '';
+    public $deskripsi = '';
+    public $user_id = '';
+    public $fakultas_ids = [];
+    public $file;
+    public $oldFile;
+    public $is_public = false;
+    
+    public $currentArsip = null;
+    public $selectedUser = null;
+    public $autoFillFakultas = true; // Flag untuk auto-fill
 
     protected $rules = [
         'judul' => 'required|string|max:255',
         'deskripsi' => 'nullable|string',
-        'fakultas_id' => 'required|exists:fakultas,id',
-        'prodi_id' => 'nullable|exists:prodi,id',
         'user_id' => 'required|exists:users,id',
-        'newFile' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,zip,rar|max:10240',
-        'newThumbnail' => 'nullable|image|max:2048',
+        'fakultas_ids' => 'required|array|min:1',
+        'fakultas_ids.*' => 'exists:fakultas,id',
+        'file' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png|max:10240',
         'is_public' => 'boolean',
     ];
 
-    public function mount(Arsip $arsip)
+    public function mount($arsip)
     {
-        // Hanya superadmin yang bisa akses
         if (auth()->user()->role->name !== 'superadmin') {
             abort(403, 'Akses ditolak. Hanya superadmin yang dapat mengakses halaman ini.');
         }
+        
+        $this->arsipId = $arsip;
+        $this->loadArsipData();
+    }
 
-        $this->arsip = $arsip;
-        $this->judul = $arsip->judul;
-        $this->deskripsi = $arsip->deskripsi;
-        $this->fakultas_id = $arsip->fakultas_id;
-        $this->prodi_id = $arsip->prodi_id;
-        $this->user_id = $arsip->user_id;
-        $this->is_public = $arsip->is_public;
+    private function loadArsipData()
+    {
+        $this->currentArsip = Arsip::with(['fakultas', 'user'])->findOrFail($this->arsipId);
+        
+        $this->judul = $this->currentArsip->judul;
+        $this->deskripsi = $this->currentArsip->deskripsi;
+        $this->user_id = $this->currentArsip->user_id;
+        $this->fakultas_ids = $this->currentArsip->fakultas->pluck('id')->toArray();
+        $this->oldFile = $this->currentArsip->file;
+        $this->is_public = $this->currentArsip->is_public;
+        
+        $this->selectedUser = User::with(['fakultas', 'prodi'])->find($this->user_id);
+    }
 
-        // Load prodi options if fakultas is set
-        if ($this->fakultas_id) {
-            $this->prodiOptions = Prodi::where('fakultas_id', $this->fakultas_id)->get();
+    // Method ini akan dipanggil OTOMATIS ketika user_id berubah
+    public function updatedUserId($value)
+    {
+        $this->selectedUser = $value ? User::with(['fakultas', 'prodi'])->find($value) : null;
+        
+        // Jika auto-fill aktif dan user memiliki fakultas, update fakultas_ids
+        if ($this->autoFillFakultas && $this->selectedUser && $this->selectedUser->fakultas_id) {
+            $this->fakultas_ids = [$this->selectedUser->fakultas_id];
         }
     }
 
-    public function updatedFakultasId($value)
+    // Method untuk toggle auto-fill
+    public function toggleAutoFill()
     {
-        if ($value) {
-            $this->prodiOptions = Prodi::where('fakultas_id', $value)->get();
-        } else {
-            $this->prodiOptions = [];
+        $this->autoFillFakultas = !$this->autoFillFakultas;
+        
+        // Jika diaktifkan kembali, update fakultas_ids sesuai user
+        if ($this->autoFillFakultas && $this->selectedUser && $this->selectedUser->fakultas_id) {
+            $this->fakultas_ids = [$this->selectedUser->fakultas_id];
         }
-        $this->prodi_id = $this->arsip->prodi_id;
     }
 
     public function update()
@@ -74,67 +89,65 @@ class Edit extends Component
         $this->validate();
 
         try {
-            // Update file if new file is uploaded
-            if ($this->newFile) {
+            // Handle file
+            $filePath = $this->oldFile;
+            if ($this->file) {
                 // Delete old file
-                if ($this->arsip->file && Storage::disk('public')->exists($this->arsip->file)) {
-                    Storage::disk('public')->delete($this->arsip->file);
+                if ($this->oldFile && Storage::disk('public')->exists($this->oldFile)) {
+                    Storage::disk('public')->delete($this->oldFile);
                 }
                 
-                // Store new file
-                $this->arsip->file = $this->newFile->store('arsip/files', 'public');
+                // Save new file
+                $fileName = time() . '_' . $this->file->getClientOriginalName();
+                $filePath = $this->file->storeAs('arsip', $fileName, 'public');
             }
-
-            // Update thumbnail if new thumbnail is uploaded
-            if ($this->newThumbnail) {
-                // Delete old thumbnail
-                if ($this->arsip->thumbnail && Storage::disk('public')->exists($this->arsip->thumbnail)) {
-                    Storage::disk('public')->delete($this->arsip->thumbnail);
-                }
-                
-                // Store and resize new thumbnail
-                $thumbnailName = $this->newThumbnail->store('arsip/thumbnails', 'public');
-                $manager = new ImageManager(new Driver());
-                $image = $manager->read(storage_path('app/public/' . $thumbnailName));
-                $image->scale(width: 300);
-                $image->save(storage_path('app/public/' . $thumbnailName));
-                
-                $this->arsip->thumbnail = $thumbnailName;
-            }
-
-            // Update arsip data
-            $this->arsip->update([
+            
+            // Update arsip
+            $this->currentArsip->update([
                 'judul' => $this->judul,
                 'deskripsi' => $this->deskripsi,
-                'fakultas_id' => $this->fakultas_id,
-                'prodi_id' => $this->prodi_id,
                 'user_id' => $this->user_id,
+                'file' => $filePath,
                 'is_public' => $this->is_public,
+                'slug' => Str::slug($this->judul) . '-' . time(),
             ]);
+
+            // Sync fakultas
+            $this->syncFakultas($this->fakultas_ids);
 
             session()->flash('success', 'Arsip berhasil diperbarui!');
             return redirect()->route('admin.arsip.index');
             
         } catch (\Exception $e) {
             session()->flash('error', 'Gagal memperbarui arsip: ' . $e->getMessage());
+            \Log::error('Error update arsip: ' . $e->getMessage());
         }
     }
 
-    public function getFakultasProperty()
+    private function syncFakultas(array $fakultasIds)
     {
-        return Fakultas::orderBy('nama_fakultas')->get();
-    }
-
-    public function getUsersProperty()
-    {
-        return User::orderBy('name')->get();
+        // Hapus semua relasi lama
+         DataFakultas::where('arsip_id', $this->currentArsip->id)->delete();
+    
+    // Ambil user ID yang sudah diupdate
+    $userId = $this->user_id; // Gunakan property yang sudah diupdate
+        
+        // // Tambahkan yang baru
+        // foreach ($fakultasIds as $fakultasId) {
+        //     DataFakultas::create([
+        //         'arsip_id' => $this->currentArsip->id,
+        //         'user_id' => $this->user_id,
+        //         'fakultas_id' => $fakultasId,
+        //         'role_id' => auth()->user()->role_id,
+        //     ]);
+        // }
     }
 
     public function render()
     {
         return view('livewire.admin-arsip.edit', [
-            'fakultas' => $this->fakultas,
-            'users' => $this->users,
+            'fakultas' => Fakultas::orderBy('nama_fakultas')->get(),
+            'users' => User::orderBy('name')->get(),
         ])->layout('layouts.app');
     }
 }

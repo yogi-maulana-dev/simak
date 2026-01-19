@@ -50,28 +50,63 @@ class Index extends Component
         $this->deleteJudul = $judul;
     }
 
-    public function delete()
-    {
-        if ($this->deleteId) {
-            $arsip = Arsip::find($this->deleteId);
-            
-            if ($arsip) {
-                // Hapus file dari storage
-                if ($arsip->file && Storage::exists($arsip->file)) {
-                    Storage::delete($arsip->file);
-                }
+public function delete()
+{
+    if ($this->deleteId) {
+        $arsip = Arsip::find($this->deleteId);
+        
+        if ($arsip) {
+            try {
+                // Hapus file dari berbagai kemungkinan lokasi
+                $this->deleteFile($arsip->file);
                 
                 // Hapus dari database
                 $arsip->delete();
                 
-                session()->flash('message', 'Arsip berhasil dihapus.');
+                session()->flash('success', 'Arsip "' . $arsip->judul . '" berhasil dihapus.');
+                
+            } catch (\Exception $e) {
+                session()->flash('error', 'Gagal menghapus arsip: ' . $e->getMessage());
+                \Log::error('Delete arsip error: ' . $e->getMessage());
             }
         }
-        
-        $this->confirmingDelete = false;
-        $this->deleteId = null;
-        $this->deleteJudul = '';
     }
+    
+    $this->confirmingDelete = false;
+    $this->deleteId = null;
+    $this->deleteJudul = '';
+}
+
+private function deleteFile($filePath)
+{
+    if (!$filePath) return;
+    
+    // Coba hapus dari storage disk 'public'
+    if (Storage::disk('public')->exists($filePath)) {
+        Storage::disk('public')->delete($filePath);
+        return;
+    }
+    
+    // Coba hapus dengan path lengkap
+    if (Storage::exists($filePath)) {
+        Storage::delete($filePath);
+        return;
+    }
+    
+    // Coba hapus dari public folder
+    $publicPath = public_path($filePath);
+    if (file_exists($publicPath)) {
+        unlink($publicPath);
+        return;
+    }
+    
+    // Coba hapus dengan path storage/app/public
+    $storagePath = storage_path('app/public/' . $filePath);
+    if (file_exists($storagePath)) {
+        unlink($storagePath);
+        return;
+    }
+}
 
     public function updatingSearch()
     {
