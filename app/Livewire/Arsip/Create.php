@@ -61,39 +61,49 @@ class Create extends Component
     }
 
     public function save()
-    {
-          $user = Auth::user();
-        $this->validate();
+{
+    $user = Auth::user();
+    $this->validate();
 
-        // Handle file upload
-      $fileName = time().'_'.$this->file->getClientOriginalName();
-
-    // ✅ SIMPAN KE storage/app/public/arsip
+    // Handle file upload
+    $fileName = time().'_'.$this->file->getClientOriginalName();
     $filePath = $this->file->storeAs('arsip', $fileName, 'public');
-        // Create arsip
-            $arsip = Arsip::create([
-                'judul' => $this->judul,
-                'deskripsi' => $this->deskripsi,
-                'file' => $filePath, // atau $filePath tergantung struktur
-                'user_id' => $user->id,
-                'fakultas_id' => $this->fakultas_id,
-                'prodi_id' => $this->prodi_id,
-            ]);
+    
+    // Create arsip
+    $arsip = Arsip::create([
+        'judul' => $this->judul,
+        'deskripsi' => $this->deskripsi,
+        'file' => $filePath,
+        'user_id' => $user->id,
+        'fakultas_id' => $this->fakultas_id,
+        'prodi_id' => $this->prodi_id,
+    ]);
 
-            // Create DataFakultas record
-            DataFakultas::create([
-                'id_data_fakultas' => Str::uuid(),
-                'arsip_id' => $arsip->id,
-                'user_id' => $user->id,
-                'fakultas_id'=> $user->fakultas_id,
-                'prodi_id'    => $user->prodi_id,
-                 'role_id'    => $user->role_id,
-            ]);
-
-
-        session()->flash('success', 'Arsip berhasil ditambahkan.');
-        return redirect()->route('arsip.index');
+    // Create record berdasarkan role_id user
+    if ($user->role_id == 3) {
+        // Untuk admin_fakultas (role 3) -> simpan ke DataFakultas
+        DataFakultas::create([
+            'id_data_fakultas' => Str::uuid(),
+            'arsip_id' => $arsip->id,
+            'user_id' => $user->id,
+            'fakultas_id' => $user->fakultas_id,
+            'role_id' => $user->role_id,
+        ]);
+    } elseif ($user->role_id == 4) {
+        // Untuk admin_prodi (role 4) -> simpan ke DataProdi
+        DataProdi::create([
+            'id_data_prodi' => Str::uuid(),
+            'arsip_id' => $arsip->id,
+            'user_id' => $user->id,
+            'fakultas_id' => $user->fakultas_id,
+            'prodi_id' => $user->prodi_id,
+            'role_id' => $user->role_id,
+        ]);
     }
+
+    session()->flash('success', 'Arsip berhasil ditambahkan.');
+    return redirect()->route('arsip.index');
+}
 
     public function render()
     {

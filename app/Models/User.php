@@ -3,38 +3,50 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Models\Fakultas;
-use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    protected $fillable = ['name', 'email', 'password','role_id','fakultas_id','prodi_id'];
+    use HasFactory, Notifiable, HasUuids;
+    
+    protected $keyType = 'string';
+    public $incrementing = false;
+    
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'role_id',
+        'fakultas_id',
+        'prodi_id',
+    ];
 
-  
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
     public function arsips()
     {
         return $this->hasMany(Arsip::class);
     }
 
-    public function fakultas()
-{
-    return $this->belongsTo(Fakultas::class, 'fakultas_id');
-}
-
-    // Tambahkan relasi prodi
-    public function prodi()
-    {
-        return $this->belongsTo(Prodi::class, 'prodi_id');
-    }
-
-
     public function role()
     {
-        return $this->belongsTo(Role::class);
+        return $this->belongsTo(Role::class, 'role_id', 'id');
+    }
+    
+    public function fakultas()
+    {
+        return $this->belongsTo(Fakultas::class, 'fakultas_id', 'id');
+    }
+    
+    public function prodi()
+    {
+        return $this->belongsTo(Prodi::class, 'prodi_id', 'id');
     }
 
     // Helper methods
@@ -87,4 +99,3 @@ class User extends Authenticatable
     }
 
 }
-

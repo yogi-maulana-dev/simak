@@ -33,6 +33,12 @@ Route::middleware('auth')->group(function () {
 
     // Admin Arsip khusus untuk superadmin (role_id 1)
     Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:1,superadmin'])->group(function () {
+        // User Management
+        Route::get('/users', \App\Livewire\Admin\UserIndex::class)->name('users.index');
+        Route::get('/users/create', \App\Livewire\Admin\UserCreate::class)->name('users.create');
+        Route::get('/users/{user}/edit', \App\Livewire\Admin\UserEdit::class)->name('users.edit');
+        
+        // Arsip Management
         Route::get('/arsip', \App\Livewire\AdminArsip\Index::class)->name('arsip.index');
         Route::get('/arsip/create', \App\Livewire\AdminArsip\Create::class)->name('arsip.create');
         Route::get('/arsip/{arsip}/edit', \App\Livewire\AdminArsip\Edit::class)->name('arsip.edit');

@@ -24,8 +24,12 @@
 
                         <!-- Menu khusus Superadmin -->
                         @if(auth()->user()->isSuperadmin())
-                            <x-nav-link :href="route('admin.arsip.index')" :active="request()->routeIs('admin.*')">
+                            <x-nav-link :href="route('admin.arsip.index')" :active="request()->routeIs('admin.arsip.*')">
                                 {{ __('Admin Arsip') }}
+                            </x-nav-link>
+                            
+                            <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+                                {{ __('Manajemen User') }}
                             </x-nav-link>
                         @endif
                     @endauth
@@ -43,6 +47,9 @@
                                 <!-- Badge role -->
                                 <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full 
                                     @if(auth()->user()->isSuperadmin()) bg-purple-100 text-purple-800
+                                    @elseif(auth()->user()->role->name === 'admin_univ') bg-blue-100 text-blue-800
+                                    @elseif(auth()->user()->role->name === 'admin_fakultas') bg-green-100 text-green-800
+                                    @elseif(auth()->user()->role->name === 'admin_prodi') bg-indigo-100 text-indigo-800
                                     @else bg-gray-100 text-gray-800 @endif">
                                     {{ Auth::user()->role->name ?? 'user' }}
                                 </span>
@@ -108,8 +115,12 @@
                 </x-responsive-nav-link>
 
                 @if(auth()->user()->isSuperadmin())
-                    <x-responsive-nav-link :href="route('admin.arsip.index')" :active="request()->routeIs('admin.*')">
+                    <x-responsive-nav-link :href="route('admin.arsip.index')" :active="request()->routeIs('admin.arsip.*')">
                         {{ __('Admin Arsip') }}
+                    </x-responsive-nav-link>
+                    
+                    <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+                        {{ __('Manajemen User') }}
                     </x-responsive-nav-link>
                 @endif
             @endauth

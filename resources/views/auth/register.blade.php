@@ -42,11 +42,11 @@
           <div class="mt-4">
         <select name="role" id="role" required>
             <option value="">-- Pilih Role --</option>
-            <option value="1">Super Admin</option>
-            <option value="2">Admin Univ</option>
-            <option value="3">Admin Fakultas</option>
-            <option value="4">Admin Prodi</option>
-            <option value="5">Asesor Fakultas</option>
+            <option value="11111111-1111-1111-1111-111111111111">Super Admin</option>
+            <option value="22222222-2222-2222-2222-222222222222">Admin Univ</option>
+            <option value="33333333-3333-3333-3333-333333333333">Admin Fakultas</option>
+            <option value="44444444-4444-4444-4444-444444444444">Admin Prodi</option>
+            <option value="55555555-5555-5555-5555-555555555555">Asesor Fakultas</option>
         </select>
           </div>
 

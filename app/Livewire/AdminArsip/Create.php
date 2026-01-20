@@ -109,35 +109,77 @@ class Create extends Component
             throw new \Exception('Gagal menyimpan file ke storage.');
         }
 
-        // 4. Dapatkan user data
-        $user = User::find($this->user_id);
-        if (!$user) {
+        // 4. Dapatkan user data yang dipilih (uploader)
+        $uploadedUser = User::find($this->user_id);
+        if (!$uploadedUser) {
             throw new \Exception('User tidak ditemukan.');
         }
 
         // 5. Simpan data arsip ke database
-     $arsip = Arsip::create([
+        $arsip = Arsip::create([
             'judul' => $this->judul,
             'deskripsi' => $this->deskripsi,
             'fakultas_id' => $this->fakultas_id,
             'prodi_id' => $this->prodi_id,
-            'user_id' => $this->user_id,
+            'user_id' => $this->user_id, // User yang dipilih (uploader)
             'file' => $filePath,
         ]);
 
-        // 6. Simpan ke data_fakultas untuk relasi many-to-many
-        if ($this->fakultas_id) {
-            // UUID akan otomatis digenerate oleh boot method
+        // 6. Simpan ke tabel yang sesuai berdasarkan role user yang dipilih
+        $roleId = $uploadedUser->role_id;
+        
+        if ($roleId == 3) {
+            // Jika user yang dipilih adalah admin_fakultas -> simpan ke DataFakultas
             DataFakultas::create([
+                'id_data_fakultas' => Str::uuid(),
+                'arsip_id' => $arsip->id,
+                'user_id' => $this->user_id,
+                'fakultas_id' => $this->fakultas_id,
+                'role_id' => $roleId,
+            ]);
+        } elseif ($roleId == 4) {
+            // Jika user yang dipilih adalah admin_prodi -> simpan ke DataProdi
+            // Pastikan sudah import model DataProdi di atas
+            // use App\Models\DataProdi;
+            DataProdi::create([
+                'id_data_prodi' => Str::uuid(),
                 'arsip_id' => $arsip->id,
                 'user_id' => $this->user_id,
                 'fakultas_id' => $this->fakultas_id,
                 'prodi_id' => $this->prodi_id,
-                'role_id' => $user->role_id,
+                'role_id' => $roleId,
             ]);
-
-                }
-
+        } elseif ($roleId == 2) {
+            // Jika user yang dipilih adalah admin_univ
+            // Bisa disimpan ke DataFakultas atau buat tabel khusus DataUniversitas
+            DataFakultas::create([
+                'id_data_fakultas' => Str::uuid(),
+                'arsip_id' => $arsip->id,
+                'user_id' => $this->user_id,
+                'fakultas_id' => $this->fakultas_id,
+                'role_id' => $roleId,
+            ]);
+        } elseif ($roleId == 1) {
+            // Jika user yang dipilih adalah superadmin
+            // Bisa disimpan ke DataFakultas atau buat tabel khusus
+            DataFakultas::create([
+                'id_data_fakultas' => Str::uuid(),
+                'arsip_id' => $arsip->id,
+                'user_id' => $this->user_id,
+                'fakultas_id' => $this->fakultas_id,
+                'role_id' => $roleId,
+            ]);
+        } else {
+            // Untuk role lain, default ke DataFakultas
+            DataFakultas::create([
+                'id_data_fakultas' => Str::uuid(),
+                'arsip_id' => $arsip->id,
+                'user_id' => $this->user_id,
+                'fakultas_id' => $this->fakultas_id,
+                'prodi_id' => $this->prodi_id,
+                'role_id' => $roleId,
+            ]);
+        }
 
         session()->flash('success', 'Arsip berhasil dibuat!');
         return redirect()->route('admin.arsip.index');
