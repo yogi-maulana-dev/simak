@@ -23,6 +23,7 @@ class ComposerStaticInit9c491b8531eec05ba41a11d9276a5749
         '3bd81c9b8fcc150b69d8b63b4d2ccf23' => __DIR__ . '/..' . '/spatie/flare-client-php/src/helpers.php',
         '09f6b20656683369174dd6fa83b7e5fb' => __DIR__ . '/..' . '/symfony/polyfill-uuid/bootstrap.php',
         'a1105708a18b76903365ca1c4aa61b02' => __DIR__ . '/..' . '/symfony/translation/Resources/functions.php',
+        '29ffe97919493792170d47eb03a68da9' => __DIR__ . '/..' . '/blade-ui-kit/blade-icons/src/helpers.php',
         '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
         '801c31d8ed748cfa537fa45402288c95' => __DIR__ . '/..' . '/psy/psysh/src/functions.php',
         'e39a8b23c42d4e1452234d762b03835a' => __DIR__ . '/..' . '/ramsey/uuid/src/functions.php',
@@ -175,6 +176,8 @@ class ComposerStaticInit9c491b8531eec05ba41a11d9276a5749
         'B' =>
         array (
             'Brick\\Math\\' => 11,
+            'BladeUI\\Icons\\' => 14,
+            'BladeUI\\Heroicons\\' => 18,
         ),
         'A' =>
         array (
@@ -535,6 +538,14 @@ class ComposerStaticInit9c491b8531eec05ba41a11d9276a5749
         array (
             0 => __DIR__ . '/..' . '/brick/math/src',
         ),
+        'BladeUI\\Icons\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/blade-ui-kit/blade-icons/src',
+        ),
+        'BladeUI\\Heroicons\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/blade-ui-kit/blade-heroicons/src',
+        ),
         'App\\' =>
         array (
             0 => __DIR__ . '/../..' . '/app',
@@ -553,9 +564,11 @@ class ComposerStaticInit9c491b8531eec05ba41a11d9276a5749
         'App\\Http\\Controllers\\Auth\\PasswordController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/PasswordController.php',
         'App\\Http\\Controllers\\Auth\\PasswordResetLinkController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/PasswordResetLinkController.php',
         'App\\Http\\Controllers\\Auth\\RegisteredUserController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/RegisteredUserController.php',
+        'App\\Http\\Controllers\\Auth\\TokenResetPasswordController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/TokenResetPasswordController.php',
         'App\\Http\\Controllers\\Auth\\VerifyEmailController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/VerifyEmailController.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
         'App\\Http\\Controllers\\ProfileController' => __DIR__ . '/../..' . '/app/Http/Controllers/ProfileController.php',
+        'App\\Http\\Controllers\\TestMailController' => __DIR__ . '/../..' . '/app/Http/Controllers/TestMailController.php',
         'App\\Http\\Kernel' => __DIR__ . '/../..' . '/app/Http/Kernel.php',
         'App\\Http\\Middleware\\Authenticate' => __DIR__ . '/../..' . '/app/Http/Middleware/Authenticate.php',
         'App\\Http\\Middleware\\EncryptCookies' => __DIR__ . '/../..' . '/app/Http/Middleware/EncryptCookies.php',
@@ -573,6 +586,7 @@ class ComposerStaticInit9c491b8531eec05ba41a11d9276a5749
         'App\\Livewire\\AdminArsip\\Edit' => __DIR__ . '/../..' . '/app/Livewire/AdminArsip/Edit.php',
         'App\\Livewire\\AdminArsip\\Index' => __DIR__ . '/../..' . '/app/Livewire/AdminArsip/Index.php',
         'App\\Livewire\\AdminArsip\\Show' => __DIR__ . '/../..' . '/app/Livewire/AdminArsip/Show.php',
+        'App\\Livewire\\Admin\\ResetPassword' => __DIR__ . '/../..' . '/app/Livewire/Admin/ResetPassword.php',
         'App\\Livewire\\Admin\\UserCreate' => __DIR__ . '/../..' . '/app/Livewire/Admin/UserCreate.php',
         'App\\Livewire\\Admin\\UserEdit' => __DIR__ . '/../..' . '/app/Livewire/Admin/UserEdit.php',
         'App\\Livewire\\Admin\\UserIndex' => __DIR__ . '/../..' . '/app/Livewire/Admin/UserIndex.php',
@@ -580,6 +594,7 @@ class ComposerStaticInit9c491b8531eec05ba41a11d9276a5749
         'App\\Livewire\\Arsip\\Edit' => __DIR__ . '/../..' . '/app/Livewire/Arsip/Edit.php',
         'App\\Livewire\\Arsip\\Index' => __DIR__ . '/../..' . '/app/Livewire/Arsip/Index.php',
         'App\\Livewire\\ConfirmationModal' => __DIR__ . '/../..' . '/app/Livewire/ConfirmationModal.php',
+        'App\\Mail\\PasswordResetTokenMail' => __DIR__ . '/../..' . '/app/Mail/PasswordResetTokenMail.php',
         'App\\Models\\Arsip' => __DIR__ . '/../..' . '/app/Models/Arsip.php',
         'App\\Models\\DataFakultas' => __DIR__ . '/../..' . '/app/Models/DataFakultas.php',
         'App\\Models\\Fakultas' => __DIR__ . '/../..' . '/app/Models/Fakultas.php',
@@ -598,6 +613,19 @@ class ComposerStaticInit9c491b8531eec05ba41a11d9276a5749
         'App\\View\\Components\\GuestLayout' => __DIR__ . '/../..' . '/app/View/Components/GuestLayout.php',
         'App\\View\\Components\\SecondaryLink' => __DIR__ . '/../..' . '/app/View/Components/SecondaryLink.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
+        'BladeUI\\Heroicons\\BladeHeroiconsServiceProvider' => __DIR__ . '/..' . '/blade-ui-kit/blade-heroicons/src/BladeHeroiconsServiceProvider.php',
+        'BladeUI\\Icons\\BladeIconsServiceProvider' => __DIR__ . '/..' . '/blade-ui-kit/blade-icons/src/BladeIconsServiceProvider.php',
+        'BladeUI\\Icons\\Components\\Icon' => __DIR__ . '/..' . '/blade-ui-kit/blade-icons/src/Components/Icon.php',
+        'BladeUI\\Icons\\Components\\Svg' => __DIR__ . '/..' . '/blade-ui-kit/blade-icons/src/Components/Svg.php',
+        'BladeUI\\Icons\\Concerns\\RendersAttributes' => __DIR__ . '/..' . '/blade-ui-kit/blade-icons/src/Concerns/RendersAttributes.php',
+        'BladeUI\\Icons\\Console\\CacheCommand' => __DIR__ . '/..' . '/blade-ui-kit/blade-icons/src/Console/CacheCommand.php',
+        'BladeUI\\Icons\\Console\\ClearCommand' => __DIR__ . '/..' . '/blade-ui-kit/blade-icons/src/Console/ClearCommand.php',
+        'BladeUI\\Icons\\Exceptions\\CannotRegisterIconSet' => __DIR__ . '/..' . '/blade-ui-kit/blade-icons/src/Exceptions/CannotRegisterIconSet.php',
+        'BladeUI\\Icons\\Exceptions\\SvgNotFound' => __DIR__ . '/..' . '/blade-ui-kit/blade-icons/src/Exceptions/SvgNotFound.php',
+        'BladeUI\\Icons\\Factory' => __DIR__ . '/..' . '/blade-ui-kit/blade-icons/src/Factory.php',
+        'BladeUI\\Icons\\Generation\\IconGenerator' => __DIR__ . '/..' . '/blade-ui-kit/blade-icons/src/Generation/IconGenerator.php',
+        'BladeUI\\Icons\\IconsManifest' => __DIR__ . '/..' . '/blade-ui-kit/blade-icons/src/IconsManifest.php',
+        'BladeUI\\Icons\\Svg' => __DIR__ . '/..' . '/blade-ui-kit/blade-icons/src/Svg.php',
         'Brick\\Math\\BigDecimal' => __DIR__ . '/..' . '/brick/math/src/BigDecimal.php',
         'Brick\\Math\\BigInteger' => __DIR__ . '/..' . '/brick/math/src/BigInteger.php',
         'Brick\\Math\\BigNumber' => __DIR__ . '/..' . '/brick/math/src/BigNumber.php',

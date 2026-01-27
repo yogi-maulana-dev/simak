@@ -3,10 +3,12 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
@@ -96,6 +98,43 @@ class User extends Authenticatable
         return $query->whereHas('role', function($q) use ($roleName) {
             $q->where('name', $roleName);
         });
+    }
+
+
+     public function hasValidResetToken(): bool
+    {
+        return $this->reset_password_token && 
+               $this->reset_password_token_expires_at &&
+               Carbon::now()->lt($this->reset_password_token_expires_at);
+    }
+
+    /**
+     * Check if token matches
+     */
+    public function verifyResetToken($token): bool
+    {
+        return $this->hasValidResetToken() && 
+               Hash::check($token, $this->reset_password_token);
+    }
+
+    /**
+     * Clear reset token
+     */
+    public function clearResetToken(): void
+    {
+        $this->update([
+            'reset_password_token' => null,
+            'reset_password_token_expires_at' => null
+        ]);
+    }
+
+    /**
+     * Scope for users with valid reset tokens
+     */
+    public function scopeWithValidResetToken($query)
+    {
+        return $query->whereNotNull('reset_password_token')
+                    ->where('reset_password_token_expires_at', '>', Carbon::now());
     }
 
 }

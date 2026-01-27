@@ -164,22 +164,31 @@
                                             {{ $user->created_at->format('d/m/Y') }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                            @if($user->role->name !== 'superadmin' || auth()->user()->id === $user->id)
-                                                <a href="{{ route('admin.users.edit', $user->id) }}" 
-                                                   class="text-indigo-600 hover:text-indigo-900">
-                                                    Edit
-                                                </a>
-                                            @endif
-                                            
-                                            @if($user->role->name !== 'superadmin' && auth()->user()->id !== $user->id)
-                                                <span class="text-gray-400">|</span>
-                                                <button wire:click="deleteUser('{{ $user->id }}')" 
-                                                        onclick="return confirm('Apakah Anda yakin ingin menghapus user ini?')"
-                                                        class="text-red-600 hover:text-red-900">
-                                                    Hapus
-                                                </button>
-                                            @endif
-                                        </td>
+    @if($user->role->name !== 'superadmin' || auth()->user()->id === $user->id)
+        <a href="{{ route('admin.users.edit', $user->id) }}" 
+           class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+            Edit
+        </a>
+    @endif
+    
+    <!-- Tombol Reset Password -->
+    @if($user->role->name !== 'superadmin' || auth()->user()->id === $user->id)
+        <span class="text-gray-400 dark:text-gray-600">|</span>
+        <a href="{{ route('admin.users.reset', $user->id) }}" 
+           class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+            Reset Password
+        </a>
+    @endif
+
+    @if($user->role->name !== 'superadmin' && auth()->user()->id !== $user->id)
+        <span class="text-gray-400 dark:text-gray-600">|</span>
+        <button wire:click="deleteUser('{{ $user->id }}')" 
+                onclick="return confirm('Apakah Anda yakin ingin menghapus user ini?')"
+                class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+            Hapus
+        </button>
+    @endif
+</td>
                                     </tr>
                                 @empty
                                     <tr>

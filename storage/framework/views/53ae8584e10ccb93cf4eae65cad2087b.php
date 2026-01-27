@@ -172,22 +172,31 @@
 
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($user->role->name !== 'superadmin' || auth()->user()->id === $user->id): ?>
-                                                <a href="<?php echo e(route('admin.users.edit', $user->id)); ?>" 
-                                                   class="text-indigo-600 hover:text-indigo-900">
-                                                    Edit
-                                                </a>
-                                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-                                            
-                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($user->role->name !== 'superadmin' && auth()->user()->id !== $user->id): ?>
-                                                <span class="text-gray-400">|</span>
-                                                <button wire:click="deleteUser('<?php echo e($user->id); ?>')" 
-                                                        onclick="return confirm('Apakah Anda yakin ingin menghapus user ini?')"
-                                                        class="text-red-600 hover:text-red-900">
-                                                    Hapus
-                                                </button>
-                                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-                                        </td>
+    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($user->role->name !== 'superadmin' || auth()->user()->id === $user->id): ?>
+        <a href="<?php echo e(route('admin.users.edit', $user->id)); ?>" 
+           class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+            Edit
+        </a>
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+    
+    <!-- Tombol Reset Password -->
+    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($user->role->name !== 'superadmin' || auth()->user()->id === $user->id): ?>
+        <span class="text-gray-400 dark:text-gray-600">|</span>
+        <a href="<?php echo e(route('admin.users.reset', $user->id)); ?>" 
+           class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+            Reset Password
+        </a>
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+
+    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($user->role->name !== 'superadmin' && auth()->user()->id !== $user->id): ?>
+        <span class="text-gray-400 dark:text-gray-600">|</span>
+        <button wire:click="deleteUser('<?php echo e($user->id); ?>')" 
+                onclick="return confirm('Apakah Anda yakin ingin menghapus user ini?')"
+                class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+            Hapus
+        </button>
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+</td>
                                     </tr>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                     <tr>
