@@ -11,6 +11,61 @@
         </div>
     </x-slot>
 
+        <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            
+            {{-- ✅ TAMBAHKAN FLASH MESSAGES DI SINI --}}
+            @if (session('success'))
+                <div class="mb-6">
+                    <x-alert type="success">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="font-medium">Sukses!</span> {{ session('success') }}
+                            </div>
+                            <button type="button" @click="$event.target.closest('.alert').remove()" class="text-green-700 hover:text-green-900">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </x-alert>
+                </div>
+            @endif
+
+            @if (session('error'))
+                <div class="mb-6">
+                    <x-alert type="error">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="font-medium">Error!</span> {{ session('error') }}
+                            </div>
+                            <button type="button" @click="$event.target.closest('.alert').remove()" class="text-red-700 hover:text-red-900">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </x-alert>
+                </div>
+            @endif
+
+            @if (session('info'))
+                <div class="mb-6">
+                    <x-alert type="info">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="font-medium">Info:</span> {{ session('info') }}
+                            </div>
+                            <button type="button" @click="$event.target.closest('.alert').remove()" class="text-blue-700 hover:text-blue-900">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </x-alert>
+                </div>
+            @endif
+
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">

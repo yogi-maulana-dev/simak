@@ -16,7 +16,6 @@ class ResetPassword extends Component
     public $password;
     public $password_confirmation;
     
-    // ✅ TAMBAHKAN VARIABEL INI
     public $showPassword = false;
     public $newPassword = '';
     
@@ -25,14 +24,15 @@ class ResetPassword extends Component
     public $showConfirmation = false;
     public $activeTab = 'direct'; // 'direct' or 'email'
     
+    // ✅ TAMBAHKAN PROPERTY INI
+    public $confirmingDefaultReset = false;
+    public $showSuccessModal = false;
+    
     // Email token
     public $generatedToken;
     public $tokenExpiresAt;
     
-    // Untuk menentukan jika ini halaman standalone atau modal
     public $isStandalonePage = true;
-    
-    // Password default
     public $defaultPassword = 'admin@1234';
     
     protected $rules = [
@@ -42,66 +42,125 @@ class ResetPassword extends Component
     public function mount(User $user)
     {
         $this->user = $user;
-        
-        // Check authorization
         $this->checkAuthorization();
-        
-        // Jika diakses dari route langsung, show modal langsung
         $this->showModal = true;
+    }
+
+    public function confirmDefaultReset()
+    {
+        $this->user->update([
+            'password' => Hash::make($this->defaultPassword),
+            'password_changed_at' => null,
+        ]);
+
+        $this->newPassword = $this->defaultPassword;
+        $this->showSuccessModal = true;
+        $this->confirmingDefaultReset = false;
+
+        session()->flash('success', 'Password berhasil direset ke default!');
     }
 
     protected function checkAuthorization()
     {
-        // Superadmin bisa reset semua user
         if (auth()->user()->hasRole('superadmin')) {
             return;
         }
         
-        // Admin hanya bisa reset user sendiri
         if (auth()->user()->id !== $this->user->id) {
             abort(403, 'Unauthorized action. Anda hanya bisa reset password akun sendiri.');
         }
     }
 
-    // Method 1: Reset dengan password default
-    public function resetWithDefaultPassword()
+    // ✅ RENAMED: resetWithCustomPassword (dari resetPasswordDirectly)
+public function resetWithCustomPassword()
+{
+    $this->validate();
+
+    try {
+        $this->user->update([
+            'password' => Hash::make($this->password),
+            'password_changed_at' => now(),
+        ]);
+
+        // Tampilkan alert success
+        session()->flash('success', 'Password untuk user ' . $this->user->name . ' berhasil direset!');
+
+        // Redirect ke halaman users index
+        return redirect()->route('admin.users.index');
+
+    } catch (\Exception $e) {
+        session()->flash('error', 'Gagal mereset password: ' . $e->getMessage());
+    }
+}
+
+    // Method 1: Reset dengan password default (dari modal konfirmasi)
+ public function resetWithDefaultPassword()
+{
+    try {
+        $this->user->update([
+            'password' => Hash::make($this->defaultPassword),
+            'password_changed_at' => null,
+        ]);
+
+        session()->flash('success', 'Password untuk ' . $this->user->name . ' berhasil direset ke default!');
+        
+        // Redirect ke index
+        return redirect()->route('admin.users.index');
+
+    } catch (\Exception $e) {
+        session()->flash('error', 'Gagal mereset password: ' . $e->getMessage());
+    }
+}
+
+public function sendResetLink()
+{
+    try {
+        $this->generatedToken = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $this->tokenExpiresAt = Carbon::now()->addHours(24);
+
+        $this->user->update([
+            'reset_password_token' => Hash::make($this->generatedToken),
+            'reset_password_token_expires_at' => $this->tokenExpiresAt,
+        ]);
+
+        Mail::to($this->user->email)->send(new PasswordResetTokenMail(
+            $this->user,
+            $this->generatedToken,
+            $this->tokenExpiresAt
+        ));
+
+        session()->flash('success', 'Link reset password telah dikirim ke email ' . $this->user->email);
+        
+        // Redirect ke index
+        return redirect()->route('admin.users.index');
+        
+    } catch (\Exception $e) {
+        session()->flash('error', 'Gagal mengirim link reset: ' . $e->getMessage());
+    }
+}
+
+
+    // ✅ RENAMED: generateRandomPassword (dari generatePassword)
+    public function generateRandomPassword()
     {
-        try {
-            // Update password dengan default
-            $this->user->update([
-                'password' => Hash::make($this->defaultPassword),
-                'password_changed_at' => null, // Force user to change on next login
-            ]);
-
-            // Set newPassword untuk ditampilkan
-            $this->newPassword = $this->defaultPassword;
-            
-            // Show confirmation
-            $this->showConfirmation = true;
-            $this->showModal = false;
-
-            session()->flash('success', 'Password berhasil direset ke default untuk ' . $this->user->name);
-
-        } catch (\Exception $e) {
-            session()->flash('error', 'Gagal mereset password: ' . $e->getMessage());
-        }
+        $this->password = Str::password(12);
+        $this->password_confirmation = $this->password;
     }
 
-    // Method 2: Generate and send 6-digit token via email
+
+
+    // Method: Generate and send 6-digit token via email
     public function sendTokenEmail()
     {
         try {
-            // Generate 6-digit token
             $this->generatedToken = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             $this->tokenExpiresAt = Carbon::now()->addHours(1);
 
-            // Save token to user (hashed for security)
             $this->user->update([
                 'reset_password_token' => Hash::make($this->generatedToken),
                 'reset_password_token_expires_at' => $this->tokenExpiresAt,
             ]);
 
-            // Send email with token
             Mail::to($this->user->email)->send(new PasswordResetTokenMail(
                 $this->user,
                 $this->generatedToken,
@@ -110,8 +169,7 @@ class ResetPassword extends Component
 
             session()->flash('success', 'Token reset password telah dikirim ke email ' . $this->user->email);
             
-            // Show confirmation with token (for admin reference)
-            $this->showConfirmation = true;
+            $this->showSuccessModal = true;
             $this->showModal = false;
 
         } catch (\Exception $e) {
@@ -119,22 +177,19 @@ class ResetPassword extends Component
         }
     }
 
-    // Method 3: Show token directly (without email)
+    // Method: Show token directly
     public function generateTokenOnly()
     {
         try {
-            // Generate 6-digit token
             $this->generatedToken = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             $this->tokenExpiresAt = Carbon::now()->addHours(1);
 
-            // Save token to user (hashed for security)
             $this->user->update([
                 'reset_password_token' => Hash::make($this->generatedToken),
                 'reset_password_token_expires_at' => $this->tokenExpiresAt,
             ]);
 
-            // Show confirmation with token
-            $this->showConfirmation = true;
+            $this->showSuccessModal = true;
             $this->showModal = false;
 
         } catch (\Exception $e) {
@@ -142,50 +197,46 @@ class ResetPassword extends Component
         }
     }
 
-    // Method 4: Reset password dengan input manual
-    public function resetPasswordDirectly()
+    // ✅ TAMBAHKAN: Method untuk close success modal
+    public function closeSuccessModal()
     {
-        $this->validate();
-
-        try {
-            // Update password
-            $this->user->update([
-                'password' => Hash::make($this->password),
-                'password_changed_at' => now(),
-            ]);
-
-            // Set newPassword untuk ditampilkan
-            $this->newPassword = $this->password;
-            
-            // Clear form
-            $this->reset(['password', 'password_confirmation']);
-
-            // Show confirmation with new password
-            $this->showConfirmation = true;
-            $this->showModal = false;
-
-            session()->flash('success', 'Password berhasil direset untuk ' . $this->user->name);
-
-        } catch (\Exception $e) {
-            session()->flash('error', 'Gagal mereset password: ' . $e->getMessage());
+        $this->showSuccessModal = false;
+        if ($this->isStandalonePage) {
+            return redirect()->route('admin.users.index');
         }
     }
 
-    // Method 5: Generate random password
-    public function generatePassword()
+    // ✅ TAMBAHKAN: Method untuk send password via email
+    public function sendPasswordViaEmail()
     {
-        $this->password = Str::password(12);
-        $this->password_confirmation = $this->password;
+        try {
+            // Buat email untuk mengirim password
+            // Anda perlu membuat Mail class untuk ini
+            Mail::to($this->user->email)->send(new \App\Mail\NewPasswordMail(
+                $this->user,
+                $this->newPassword
+            ));
+
+            session()->flash('success', 'Password baru telah dikirim ke email ' . $this->user->email);
+            $this->showSuccessModal = false;
+            
+            if ($this->isStandalonePage) {
+                return redirect()->route('admin.users.index');
+            }
+            
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal mengirim email: ' . $e->getMessage());
+        }
     }
 
-    // Method 6: Copy token/password to clipboard
+    // Method: Copy token/password to clipboard
     public function copyToClipboard($text)
     {
         $this->dispatch('copy-to-clipboard', text: $text);
         session()->flash('info', 'Berhasil disalin ke clipboard!');
     }
 
-    // Method 7: Close modal
+    // Method: Close modal
     public function closeModal()
     {
         if ($this->isStandalonePage) {
@@ -195,23 +246,7 @@ class ResetPassword extends Component
         $this->reset(['showModal', 'password', 'password_confirmation', 'activeTab', 'showPassword']);
     }
 
-    // Method 8: Close confirmation
-    public function closeConfirmation()
-    {
-        if ($this->isStandalonePage) {
-            return redirect()->route('admin.users.index');
-        }
-        
-        $this->reset(['showConfirmation', 'generatedToken', 'tokenExpiresAt', 'password', 'newPassword']);
-    }
-
-    // Method 9: Reset token (generate new one)
-    public function regenerateToken()
-    {
-        $this->sendTokenEmail();
-    }
-
-    // ✅ TAMBAHKAN METHOD UNTUK TOGGLE PASSWORD VISIBILITY
+    // Method: Toggle password visibility
     public function togglePasswordVisibility()
     {
         $this->showPassword = !$this->showPassword;
@@ -219,7 +254,6 @@ class ResetPassword extends Component
 
     public function render()
     {
-        return view('livewire.admin.reset-password')
-            ->layout('layouts.app');
+        return view('livewire.admin.reset-password');
     }
 }

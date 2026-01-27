@@ -1,4 +1,4 @@
-{{-- resources/views/livewire/user-reset-password.blade.php --}}
+{{-- resources/views/livewire/admin/reset-password.blade.php --}}
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
@@ -10,7 +10,7 @@
                     {{ $user->name }} • {{ $user->email }}
                 </p>
             </div>
-          <x-secondary-link :href="route('admin.users.index')">
+            <x-secondary-link :href="route('admin.users.index')">
                 ← Kembali ke Daftar User
             </x-secondary-link>
         </div>
@@ -89,12 +89,12 @@
                                                     Reset ke Password Default
                                                 </p>
                                                 <p class="text-xs text-green-600 mt-1">
-                                                    Password: <code class="bg-green-100 px-2 py-1 rounded">admin@1234</code>
+                                                    Password: <code class="bg-green-100 px-2 py-1 rounded">{{ $defaultPassword }}</code>
                                                 </p>
                                             </div>
                                         </div>
                                         <x-danger-button 
-                                            wire:click="confirmDefaultReset"
+                                            wire:click="$set('confirmingDefaultReset', true)"
                                             wire:loading.attr="disabled">
                                             Reset ke Default
                                         </x-danger-button>
@@ -271,7 +271,7 @@
                         </svg>
                         <div>
                             <p class="text-sm text-yellow-800">
-                                <strong>Perhatian:</strong> Password akan direset ke <code class="font-mono">admin@1234</code>.
+                                <strong>Perhatian:</strong> Password akan direset ke <code class="font-mono">{{ $defaultPassword }}</code>.
                                 User harus mengganti password saat login pertama kali.
                             </p>
                         </div>
@@ -281,7 +281,7 @@
         </x-slot>
 
         <x-slot name="footer">
-            <x-secondary-button wire:click="$toggle('confirmingDefaultReset')">
+            <x-secondary-button wire:click="$set('confirmingDefaultReset', false)">
                 Batal
             </x-secondary-button>
 
@@ -342,7 +342,7 @@
                         </button>
                     </div>
                     <p class="mt-4 text-sm text-gray-500">
-                        @if($newPassword === 'admin@1234')
+                        @if($newPassword === $defaultPassword)
                             ⚠️ <strong>Password default</strong> - User harus mengganti password saat login pertama kali.
                         @else
                             🔒 Password ini hanya ditampilkan sekali. Pastikan untuk menyimpannya dengan aman.
@@ -350,7 +350,7 @@
                     </p>
                 </div>
 
-                @if($newPassword === 'admin@1234')
+                @if($newPassword === $defaultPassword)
                     <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                         <div class="flex">
                             <svg class="h-5 w-5 text-yellow-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
