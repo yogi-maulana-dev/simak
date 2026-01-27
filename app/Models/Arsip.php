@@ -7,10 +7,24 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Arsip extends Model
 {
-    protected $table = 'arsip';
+
+  protected $table = 'arsip';
+
+    protected $keyType = 'string';
+    public $incrementing = false;
+
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            if (empty($model->{$model->getKeyName()})) {
+                $model->{$model->getKeyName()} = (string) Str::uuid();
+            }
+        });
+    }
 
     protected $fillable = [
         'judul',
