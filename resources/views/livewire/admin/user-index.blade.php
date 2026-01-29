@@ -229,10 +229,13 @@
     <!-- Tombol Reset Password -->
     @if($user->role->name !== 'superadmin' || auth()->user()->id === $user->id)
         <span class="text-gray-400 dark:text-gray-600">|</span>
-        <a href="{{ route('admin.users.reset', $user->id) }}" 
-           class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
-            Reset Password
-        </a>
+       <a href="{{ route('admin.users.reset-password', $user) }}" 
+               class="text-yellow-600 hover:text-yellow-900 inline-flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                </svg>
+                Reset Password
+            </a>
     @endif
 
     @if($user->role->name !== 'superadmin' && auth()->user()->id !== $user->id)

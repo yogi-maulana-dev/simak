@@ -42,20 +42,17 @@ Route::middleware('auth')->group(function () {
         Route::get('/users', \App\Livewire\Admin\UserIndex::class)->name('users.index');
         Route::get('/users/create', \App\Livewire\Admin\UserCreate::class)->name('users.create');
         Route::get('/users/{user}/edit', \App\Livewire\Admin\UserEdit::class)->name('users.edit');
+        Route::get('/users/{user}/reset', \App\Livewire\Admin\ResetPassword::class)->name('users.reset');
+        Route::get('/users/{user}/reset-password', \App\Livewire\Admin\ResetPassword::class)->name('users.reset-password');
         
         // Arsip Management
         Route::get('/arsip', \App\Livewire\AdminArsip\Index::class)->name('arsip.index');
         Route::get('/arsip/create', \App\Livewire\AdminArsip\Create::class)->name('arsip.create');
         Route::get('/arsip/{arsip}/edit', \App\Livewire\AdminArsip\Edit::class)->name('arsip.edit');
 
+        // Token Reset Password (ini dipindahkan ke dalam group admin)
         Route::get('/reset-password/token', [TokenResetPasswordController::class, 'showResetForm'])
-    ->name('password.reset.token');
-
-    
-
-        Route::get('/users/{user}/reset', \App\Livewire\Admin\ResetPassword::class)->name('users.reset');
-        Route::get('/users/{user}/reset-password', \App\Livewire\Admin\ResetPassword::class)->name('users.reset-password');
-    
+            ->name('password.reset.token');
     });
 });
 
@@ -73,6 +70,5 @@ Route::get('/test-email', function () {
     
     return 'Email sent to ' . $user->email;
 });
-
 
 require __DIR__.'/auth.php';
