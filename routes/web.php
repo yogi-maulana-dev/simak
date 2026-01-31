@@ -71,4 +71,4 @@ Route::get('/test-email', function () {
     return 'Email sent to ' . $user->email;
 });
 
-require __DIR__.'/auth.php';
+require __DIR__.'/auth.php'; 
