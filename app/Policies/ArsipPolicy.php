@@ -80,29 +80,30 @@ class ArsipPolicy
         return false;
     }
 
-    public function delete(User $user, Arsip $arsip)
-    {
-        // Super Admin → TIDAK BOLEH DELETE
-        if ($this->isSuperAdmin($user)) {
-            return false;
-        }
-
-        // Admin Univ → hanya arsip miliknya
-        if ($this->isAdminUniv($user)) {
-            return $this->isOwner($user, $arsip);
-        }
-
-        // Admin Fakultas → arsip fakultasnya
-        if ($this->isAdminFakultas($user)) {
-            return $this->isInUserFakultas($user, $arsip);
-        }
-
-        // Admin Prodi → arsip miliknya sendiri
-        if ($this->isAdminProdi($user)) {
-            return $this->isOwner($user, $arsip);
-        }
-
-        // Asesor → tidak boleh delete
-        return false;
+public function delete(User $user, Arsip $arsip)
+{
+    // Super Admin selalu boleh
+    if ($this->isSuperAdmin($user)) {
+        return true;
     }
+
+    // Admin Universitas boleh hapus semua
+    if ($this->isAdminUniv($user)) {
+        return true;
+    }
+
+    // Admin Fakultas boleh hapus arsip di fakultasnya
+    if ($this->isAdminFakultas($user)) {
+        return $this->isInUserFakultas($user, $arsip);
+    }
+
+    // Admin Prodi hanya arsip prodinya
+    if ($this->isAdminProdi($user)) {
+        return $this->isInUserProdi($user, $arsip);
+    }
+
+    // Selain itu: hanya pemilik arsip
+    return $this->isOwner($user, $arsip);
+}
+
 }

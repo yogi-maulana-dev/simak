@@ -49,24 +49,24 @@
                                         <option value="{{ $user->id }}">
                                             {{ $user->name }} 
                                             ({{ $user->email }})
+                                            @if($user->role)
+                                                - {{ $user->role->name }}
+                                            @endif
                                         </option>
                                     @endforeach
                                 </select>
                                 @error('user_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
 
-                            {{-- Fakultas (Read-only/auto-filled) --}}
+                            {{-- Fakultas --}}
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Fakultas *</label>
-                                <select wire:model="fakultas_id" 
-                                        {{ $user_id ? 'disabled' : '' }}
-                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-50">
+                                <select wire:model.live="fakultas_id" 
+                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        {{ $user_id ? 'disabled' : '' }}>
                                     <option value="">Pilih Fakultas</option>
                                     @foreach($fakultas as $f)
-                                        <option value="{{ $f->id }}" 
-                                                @if($selectedUser && $selectedUser->fakultas_id == $f->id) 
-                                                    class="font-bold text-blue-600"
-                                                @endif>
+                                        <option value="{{ $f->id }}">
                                             {{ $f->nama_fakultas }}
                                             @if($selectedUser && $selectedUser->fakultas_id == $f->id) 
                                                 (sesuai user)
@@ -76,7 +76,6 @@
                                 </select>
                                 @error('fakultas_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 
-                                {{-- Info bahwa fakultas diisi otomatis --}}
                                 @if($user_id && $selectedUser && $selectedUser->fakultas_id)
                                     <p class="mt-1 text-sm text-blue-600">
                                         ✓ Fakultas diisi otomatis sesuai user
@@ -84,20 +83,17 @@
                                 @endif
                             </div>
 
-                            {{-- Program Studi (Read-only/auto-filled) --}}
+                            {{-- Program Studi --}}
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Program Studi</label>
-                                <select wire:model="prodi_id" 
+                                <select wire:model.live="prodi_id" 
                                         wire:loading.attr="disabled"
-                                        {{ $user_id ? 'disabled' : '' }}
-                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-50">
+                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        {{ $user_id ? 'disabled' : '' }}>
                                     <option value="">Pilih Prodi</option>
                                     @if($fakultas_id)
                                         @foreach($prodiOptions as $prodi)
-                                            <option value="{{ $prodi->id }}"
-                                                    @if($selectedUser && $selectedUser->prodi_id == $prodi->id) 
-                                                        class="font-bold text-blue-600"
-                                                    @endif>
+                                            <option value="{{ $prodi->id }}">
                                                 {{ $prodi->nama_prodi }}
                                                 @if($selectedUser && $selectedUser->prodi_id == $prodi->id) 
                                                     (sesuai user)
@@ -108,7 +104,6 @@
                                 </select>
                                 @error('prodi_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 
-                                {{-- Info bahwa prodi diisi otomatis --}}
                                 @if($user_id && $selectedUser && $selectedUser->prodi_id)
                                     <p class="mt-1 text-sm text-blue-600">
                                         ✓ Prodi diisi otomatis sesuai user
@@ -122,12 +117,25 @@
                                 <input type="file" wire:model="file" 
                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                                 @error('file') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                
                                 @if($file)
-                                    <p class="mt-1 text-sm text-gray-500">File: {{ $file->getClientOriginalName() }} ({{ round($file->getSize() / 1024, 2) }} KB)</p>
+                                    <div class="mt-2 p-2 bg-gray-50 rounded">
+                                        <p class="text-sm text-gray-700">
+                                            <strong>File yang dipilih:</strong> {{ $file->getClientOriginalName() }}
+                                        </p>
+                                        <p class="text-xs text-gray-500">
+                                            Ukuran: {{ round($file->getSize() / 1024, 2) }} KB |
+                                            Tipe: {{ $file->getClientOriginalExtension() }}
+                                        </p>
+                                    </div>
                                 @endif
+                                
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Format yang didukung: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, JPG, JPEG, PNG
+                                    <br>Maksimal ukuran: 10MB
+                                </p>
                             </div>
 
-                        
                             {{-- Public Access --}}
                             <div class="md:col-span-2">
                                 <div class="flex items-center">
@@ -137,6 +145,9 @@
                                         Arsip dapat diakses publik (tanpa login)
                                     </label>
                                 </div>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Jika dicentang, arsip dapat dilihat oleh siapa saja tanpa perlu login ke sistem.
+                                </p>
                             </div>
                         </div>
 
@@ -148,8 +159,9 @@
                             </a>
                             <button type="submit" 
                                     wire:loading.attr="disabled"
+                                    wire:target="save"
                                     class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
-                                <span wire:loading.remove>Simpan Arsip</span>
+                                <span wire:loading.remove wire:target="save">Simpan Arsip</span>
                                 <span wire:loading wire:target="save" class="flex items-center">
                                     <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

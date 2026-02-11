@@ -52,72 +52,10 @@
             </div>
 
             {{-- Fakultas --}}
-            <div>
-                <label for="fakultas_id" class="block text-sm font-medium text-gray-700 mb-1">
-                    Fakultas *
-                </label>
-                <div class="relative">
-                    <select id="fakultas_id" 
-                            wire:model="fakultas_id" 
-                            @if(auth()->user()->hasRole('admin_fakultas') || auth()->user()->hasRole('admin_prodi')) 
-                                disabled 
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-500 cursor-not-allowed"
-                            @else
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('fakultas_id') border-red-300 @enderror"
-                            @endif>
-                        <option value="">Pilih Fakultas</option>
-                        @foreach($fakultas as $f)
-                            <option value="{{ $f->id }}" 
-                                    @if(old('fakultas_id', $arsip->fakultas_id ?? '') == $f->id) selected @endif>
-                                {{ $f->nama_fakultas }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @if(auth()->user()->hasRole('admin_fakultas') || auth()->user()->hasRole('admin_prodi'))
-                        <div class="absolute inset-0 bg-gray-50 opacity-50 cursor-not-allowed"></div>
-                        <p class="mt-1 text-xs text-gray-500">
-                            Fakultas terkunci karena peran Anda
-                        </p>
-                    @endif
-                </div>
-                @error('fakultas_id')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                @enderror
-            </div>
+       
 
             {{-- Program Studi --}}
-            <div>
-                <label for="prodi_id" class="block text-sm font-medium text-gray-700 mb-1">
-                    Program Studi
-                </label>
-                <div class="relative">
-                    <select id="prodi_id" 
-                            wire:model="prodi_id" 
-                            @if(auth()->user()->hasRole('admin_prodi')) 
-                                disabled 
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-500 cursor-not-allowed"
-                            @else
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('prodi_id') border-red-300 @enderror"
-                            @endif>
-                        <option value="">Pilih Program Studi (opsional)</option>
-                        @foreach($prodis as $p)
-                            <option value="{{ $p->id }}"
-                                    @if(old('prodi_id', $arsip->prodi_id ?? '') == $p->id) selected @endif>
-                                {{ $p->nama_prodi }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @if(auth()->user()->hasRole('admin_prodi'))
-                        <div class="absolute inset-0 bg-gray-50 opacity-50 cursor-not-allowed"></div>
-                        <p class="mt-1 text-xs text-gray-500">
-                            Program Studi terkunci karena peran Anda
-                        </p>
-                    @endif
-                </div>
-                @error('prodi_id')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                @enderror
-            </div>
+            
 
             {{-- File --}}
             <div class="border-t border-gray-200 pt-6">

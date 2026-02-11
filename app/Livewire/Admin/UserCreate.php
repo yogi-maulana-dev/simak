@@ -26,7 +26,7 @@ class UserCreate extends Component
     public $fakultas = [];
     public $roles = [];
     
-    public $isSubmitting = false; // Tambah state untuk loading
+    public $isSubmitting = false;
     
     public function mount()
     {
@@ -73,11 +73,13 @@ class UserCreate extends Component
             $role = Role::find($this->role_id);
             
             if ($role) {
-                if ($role->name === 'admin_fakultas') {
+                // Role yang membutuhkan fakultas
+                if (in_array($role->name, ['admin_fakultas', 'asesor_fakultas'])) {
                     $rules['fakultas_id'] = ['required', 'exists:fakultas,id'];
                 }
                 
-                if ($role->name === 'admin_prodi') {
+                // Role yang membutuhkan fakultas dan prodi
+                if (in_array($role->name, ['admin_prodi', 'asesor_prodi'])) {
                     $rules['fakultas_id'] = ['required', 'exists:fakultas,id'];
                     $rules['prodi_id'] = ['required', 'exists:prodi,id'];
                 }
@@ -99,7 +101,7 @@ class UserCreate extends Component
     
     public function save()
     {
-        $this->isSubmitting = true; // Set loading state
+        $this->isSubmitting = true;
         
         try {
             $this->validate();
@@ -109,11 +111,12 @@ class UserCreate extends Component
             $fakultas_id = null;
             $prodi_id = null;
             
-            if ($role->name === 'admin_fakultas') {
+            // Tentukan fakultas_id dan prodi_id berdasarkan role
+            if (in_array($role->name, ['admin_fakultas', 'asesor_fakultas'])) {
                 $fakultas_id = $this->fakultas_id;
                 $prodi_id = null;
             } 
-            elseif ($role->name === 'admin_prodi') {
+            elseif (in_array($role->name, ['admin_prodi', 'asesor_prodi'])) {
                 $fakultas_id = $this->fakultas_id;
                 $prodi_id = $this->prodi_id;
             }
@@ -136,19 +139,12 @@ class UserCreate extends Component
             $this->prodis = [];
             $this->isSubmitting = false;
             
-            // 1. SET FLASH MESSAGE untuk index page
             Session::flash('success', 'User berhasil ditambahkan!');
-            
-            // 2. REDIRECT ke index dengan flash message
             return redirect()->route('admin.users.index');
             
         } catch (\Exception $e) {
             $this->isSubmitting = false;
-            
-            // Set error message
             $this->addError('save', 'Gagal menambahkan user: ' . $e->getMessage());
-            
-            // Atau gunakan session flash untuk error
             Session::flash('error', 'Gagal menambahkan user: ' . $e->getMessage());
         }
     }

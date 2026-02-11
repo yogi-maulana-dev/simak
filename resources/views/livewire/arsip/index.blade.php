@@ -1,4 +1,11 @@
 <div>
+    {{-- Debug Panel --}}
+    {{-- <div class="fixed top-4 right-4 bg-black text-white p-3 rounded z-50 text-xs">
+        <div>confirmingDelete: <span class="{{ $confirmingDelete ? 'text-green-400' : 'text-red-400' }}">{{ $confirmingDelete ? 'TRUE' : 'FALSE' }}</span></div>
+        <div>deleteId: {{ $deleteId ?? 'null' }}</div>
+        <div>deleteJudul: {{ $deleteJudul ?? 'null' }}</div>
+    </div> --}}
+
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -115,32 +122,20 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex space-x-2">
-                                                {{-- View Button --}}
-                                                {{-- @can('view', $arsip)
-                                                    <a href="{{ route('arsip.show', $arsip->id) }}" 
-                                                       class="text-blue-600 hover:text-blue-900" 
-                                                       title="Lihat">
-                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                        </svg>
-                                                    </a>
-                                                @endcan --}}
-
                                                 {{-- Edit Button --}}
-                                                @can('update', $arsip)
-                                                    <a href="{{ route('arsip.edit', $arsip->id) }}" 
+                                             <a href="{{ route('arsip.edit', $arsip->id) }}" 
                                                        class="text-green-600 hover:text-green-900" 
                                                        title="Edit">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                         </svg>
                                                     </a>
-                                                @endcan
 
                                                 {{-- Delete Button --}}
                                                 @can('delete', $arsip)
-                                                    <button wire:click="confirmDelete({{ $arsip->id }})" 
+                                                    <button type="button"
+                                                            wire:click="confirmDelete('{{ $arsip->id }}')"
+                                                            onclick="console.log('Delete clicked for:', '{{ $arsip->id }}', '{{ $arsip->judul }}')"
                                                             class="text-red-600 hover:text-red-900" 
                                                             title="Hapus">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,3 +253,26 @@
         </div>
     @endif
 </div>
+
+<script>
+    document.addEventListener('livewire:init', () => {
+        console.log('Arsip Index Livewire initialized');
+        
+        Livewire.hook('request', ({ payload }) => {
+            console.log('Livewire request:', payload);
+        });
+        
+        Livewire.hook('response', ({ status, content }) => {
+            console.log('Livewire response status:', status);
+            if (content.serverMemo.errors && content.serverMemo.errors.length > 0) {
+                console.error('Livewire errors:', content.serverMemo.errors);
+            }
+        });
+    });
+    
+    // Manual test function
+    window.testDelete = function(arsipId, arsipJudul) {
+        console.log('Manual test for:', arsipId, arsipJudul);
+        Livewire.dispatch('confirmDelete', { id: arsipId });
+    };
+</script>

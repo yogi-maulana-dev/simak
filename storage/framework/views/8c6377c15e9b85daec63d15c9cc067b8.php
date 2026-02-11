@@ -65,6 +65,10 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                                         <option value="<?php echo e($user->id); ?>">
                                             <?php echo e($user->name); ?> 
                                             (<?php echo e($user->email); ?>)
+                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($user->role): ?>
+                                                - <?php echo e($user->role->name); ?>
+
+                                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                         </option>
                                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                 </select>
@@ -81,16 +85,12 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Fakultas *</label>
-                                <select wire:model="fakultas_id" 
-                                        <?php echo e($user_id ? 'disabled' : ''); ?>
-
-                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-50">
+                                <select wire:model.live="fakultas_id" 
+                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        <?php echo e($user_id ? 'disabled' : ''); ?>>
                                     <option value="">Pilih Fakultas</option>
                                     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $fakultas; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $f): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                        <option value="<?php echo e($f->id); ?>" 
-                                                <?php if($selectedUser && $selectedUser->fakultas_id == $f->id): ?> 
-                                                    class="font-bold text-blue-600"
-                                                <?php endif; ?>>
+                                        <option value="<?php echo e($f->id); ?>">
                                             <?php echo e($f->nama_fakultas); ?>
 
                                             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($selectedUser && $selectedUser->fakultas_id == $f->id): ?> 
@@ -108,7 +108,6 @@ if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                 
-                                
                                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($user_id && $selectedUser && $selectedUser->fakultas_id): ?>
                                     <p class="mt-1 text-sm text-blue-600">
                                         ✓ Fakultas diisi otomatis sesuai user
@@ -119,18 +118,14 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Program Studi</label>
-                                <select wire:model="prodi_id" 
+                                <select wire:model.live="prodi_id" 
                                         wire:loading.attr="disabled"
-                                        <?php echo e($user_id ? 'disabled' : ''); ?>
-
-                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-50">
+                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        <?php echo e($user_id ? 'disabled' : ''); ?>>
                                     <option value="">Pilih Prodi</option>
                                     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($fakultas_id): ?>
                                         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $prodiOptions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $prodi): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                            <option value="<?php echo e($prodi->id); ?>"
-                                                    <?php if($selectedUser && $selectedUser->prodi_id == $prodi->id): ?> 
-                                                        class="font-bold text-blue-600"
-                                                    <?php endif; ?>>
+                                            <option value="<?php echo e($prodi->id); ?>">
                                                 <?php echo e($prodi->nama_prodi); ?>
 
                                                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($selectedUser && $selectedUser->prodi_id == $prodi->id): ?> 
@@ -148,7 +143,6 @@ $message = $__bag->first($__errorArgs[0]); ?> <span class="text-red-500 text-sm"
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-                                
                                 
                                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($user_id && $selectedUser && $selectedUser->prodi_id): ?>
                                     <p class="mt-1 text-sm text-blue-600">
@@ -170,12 +164,27 @@ $message = $__bag->first($__errorArgs[0]); ?> <span class="text-red-500 text-sm"
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                
                                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($file): ?>
-                                    <p class="mt-1 text-sm text-gray-500">File: <?php echo e($file->getClientOriginalName()); ?> (<?php echo e(round($file->getSize() / 1024, 2)); ?> KB)</p>
+                                    <div class="mt-2 p-2 bg-gray-50 rounded">
+                                        <p class="text-sm text-gray-700">
+                                            <strong>File yang dipilih:</strong> <?php echo e($file->getClientOriginalName()); ?>
+
+                                        </p>
+                                        <p class="text-xs text-gray-500">
+                                            Ukuran: <?php echo e(round($file->getSize() / 1024, 2)); ?> KB |
+                                            Tipe: <?php echo e($file->getClientOriginalExtension()); ?>
+
+                                        </p>
+                                    </div>
                                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Format yang didukung: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, JPG, JPEG, PNG
+                                    <br>Maksimal ukuran: 10MB
+                                </p>
                             </div>
 
-                        
                             
                             <div class="md:col-span-2">
                                 <div class="flex items-center">
@@ -185,6 +194,9 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                                         Arsip dapat diakses publik (tanpa login)
                                     </label>
                                 </div>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Jika dicentang, arsip dapat dilihat oleh siapa saja tanpa perlu login ke sistem.
+                                </p>
                             </div>
                         </div>
 
@@ -196,8 +208,9 @@ unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendB
                             </a>
                             <button type="submit" 
                                     wire:loading.attr="disabled"
+                                    wire:target="save"
                                     class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
-                                <span wire:loading.remove>Simpan Arsip</span>
+                                <span wire:loading.remove wire:target="save">Simpan Arsip</span>
                                 <span wire:loading wire:target="save" class="flex items-center">
                                     <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

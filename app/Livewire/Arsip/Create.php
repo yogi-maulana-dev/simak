@@ -8,6 +8,7 @@ use Livewire\Component;
 use App\Models\Fakultas;
 use Illuminate\Support\Str;
 use App\Models\DataFakultas;
+use App\Models\DataProdis;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Auth;
 
@@ -65,23 +66,22 @@ class Create extends Component
     $user = Auth::user();
     $this->validate();
 
-    // Handle file upload
     $fileName = time().'_'.$this->file->getClientOriginalName();
     $filePath = $this->file->storeAs('arsip', $fileName, 'public');
-    
-    // Create arsip
+
+
+    // ADMIN FAKULTAS
+    if ($user->role_id === '33333333-3333-3333-3333-333333333333') {
+
+
     $arsip = Arsip::create([
-        'judul' => $this->judul,
-        'deskripsi' => $this->deskripsi,
-        'file' => $filePath,
-        'user_id' => $user->id,
-        'fakultas_id' => $this->fakultas_id,
-        'prodi_id' => $this->prodi_id,
+        'judul'       => $this->judul,
+        'deskripsi'   => $this->deskripsi,
+        'file'        => $filePath,
+        'user_id'     => $user->id,
+        'fakultas_id' => $user->fakultas_id,
     ]);
 
-    // Create record berdasarkan role_id user
-    if ($user->role_id == 3) {
-        // Untuk admin_fakultas (role 3) -> simpan ke DataFakultas
         DataFakultas::create([
             'id_data_fakultas' => Str::uuid(),
             'arsip_id' => $arsip->id,
@@ -89,10 +89,22 @@ class Create extends Component
             'fakultas_id' => $user->fakultas_id,
             'role_id' => $user->role_id,
         ]);
-    } elseif ($user->role_id == 4) {
-        // Untuk admin_prodi (role 4) -> simpan ke DataProdi
-        DataProdi::create([
-            'id_data_prodi' => Str::uuid(),
+    }
+
+    // ADMIN PRODI
+    if ($user->role_id === '44444444-4444-4444-4444-444444444444') {
+
+       $arsip = Arsip::create([
+        'judul'       => $this->judul,
+        'deskripsi'   => $this->deskripsi,
+        'file'        => $filePath,
+        'user_id'     => $user->id,
+        'fakultas_id' => $user->fakultas_id,
+        'prodi_id'    => $user->prodi_id,
+    ]);
+
+        DataProdis::create([
+            'id_data_prodis' => Str::uuid(),
             'arsip_id' => $arsip->id,
             'user_id' => $user->id,
             'fakultas_id' => $user->fakultas_id,
@@ -104,6 +116,7 @@ class Create extends Component
     session()->flash('success', 'Arsip berhasil ditambahkan.');
     return redirect()->route('arsip.index');
 }
+
 
     public function render()
     {

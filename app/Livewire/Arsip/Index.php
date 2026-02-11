@@ -2,12 +2,13 @@
 
 namespace App\Livewire\Arsip;
 
+use App\Models\Arsip;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\Arsip;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class Index extends Component
 {
@@ -20,7 +21,8 @@ class Index extends Component
 
     // Delete state
     public bool $confirmingDelete = false;
-    public ?int $deleteId = null;
+    public ?string $deleteId = null;
+
     public ?string $deleteJudul = null;
 
     protected $queryString = [
@@ -66,72 +68,93 @@ class Index extends Component
     /**
      * Confirm delete with additional info
      */
-    public function confirmDelete(int $id): void
-    {
-        $arsip = Arsip::findOrFail($id);
-        
-        // Authorization
-        $this->authorize('delete', $arsip);
+public function confirmDelete(string $id): void
+{
+    Log::info('confirmDelete', [
+        'id' => $id,
+        'type' => gettype($id),
+    ]);
 
-        $this->deleteId = $id;
-        $this->deleteJudul = $arsip->judul;
-        $this->confirmingDelete = true;
+    $arsip = Arsip::find($id);
+
+    if (! $arsip) {
+        session()->flash('error', 'Arsip tidak ditemukan');
+        return;
     }
 
+    if (! auth()->user()->can('delete', $arsip)) {
+        session()->flash('error', 'Anda tidak punya izin');
+        return;
+    }
+
+    $this->deleteId = $id;
+    $this->deleteJudul = $arsip->judul;
+    $this->confirmingDelete = true;
+}
+
+
+
     /**
-     * Execute delete with proper file handling
+     * Execute delete
      */
     public function delete(): void
     {
         try {
-            // Validasi ID
             if (!$this->deleteId) {
                 throw new \Exception('ID arsip tidak valid');
             }
 
-            $arsip = Arsip::findOrFail($this->deleteId);
+            Log::info('Deleting arsip:', ['id' => $this->deleteId]);
+            
+            $arsip = Arsip::find($this->deleteId);
+            
+            if (!$arsip) {
+                throw new \Exception('Arsip tidak ditemukan');
+            }
 
             // Double authorization check
-            $this->authorize('delete', $arsip);
+            if (!auth()->user()->can('delete', $arsip)) {
+                throw new \Exception('Anda tidak memiliki izin untuk menghapus arsip ini');
+            }
 
             // Delete physical file if exists
             if ($arsip->file) {
                 $filePath = str_replace('/storage/', '', $arsip->file);
                 if (Storage::disk('public')->exists($filePath)) {
                     Storage::disk('public')->delete($filePath);
-                }
-                
-                // Hapus juga thumbnail jika ada
-                $thumbnailPath = str_replace('/storage/', '', $arsip->thumbnail);
-                if ($thumbnailPath && Storage::disk('public')->exists($thumbnailPath)) {
-                    Storage::disk('public')->delete($thumbnailPath);
+                    Log::info('File deleted:', ['path' => $filePath]);
                 }
             }
 
+            $judul = $arsip->judul;
             $arsip->delete();
 
+            Log::info('Arsip deleted successfully:', ['id' => $this->deleteId]);
+            
             $this->reset(['confirmingDelete', 'deleteId', 'deleteJudul']);
             
-            // Flash message
-            session()->flash('success', 'Arsip berhasil dihapus!');
+            session()->flash('success', "Arsip '{$judul}' berhasil dihapus!");
             
-            // Emit event untuk refresh jika perlu
-            $this->dispatch('arsip-deleted');
+            // Reset page jika ini item terakhir di halaman
+            if (Arsip::count() % $this->perPage === 0) {
+                $this->resetPage();
+            }
             
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            session()->flash('error', 'Arsip tidak ditemukan atau sudah dihapus.');
         } catch (\Exception $e) {
+            Log::error('Delete failed:', ['error' => $e->getMessage()]);
             session()->flash('error', 'Gagal menghapus arsip: ' . $e->getMessage());
+            $this->reset(['confirmingDelete', 'deleteId', 'deleteJudul']);
         }
     }
 
     /**
-     * Cancel delete confirmation
+     * Cancel delete
      */
     public function cancelDelete(): void
     {
         $this->reset(['confirmingDelete', 'deleteId', 'deleteJudul']);
     }
+
 
     /**
      * Download file arsip
