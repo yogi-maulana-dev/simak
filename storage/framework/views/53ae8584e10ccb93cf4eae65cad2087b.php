@@ -245,12 +245,12 @@
                                             <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
                                             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($user->role->name !== 'superadmin' && auth()->user()->id !== $user->id): ?>
-                                                <span class="text-gray-400">|</span>
-                                                <button wire:click="deleteUser('<?php echo e($user->id); ?>')" 
-                                                        onclick="return confirm('Apakah Anda yakin ingin menghapus user ini?')"
-                                                        class="text-red-600 hover:text-red-900 hover:underline transition duration-200">
-                                                    Hapus
-                                                </button>
+                                                <!--<span class="text-gray-400">|</span>-->
+                                                <!--<button wire:click="deleteUser('<?php echo e($user->id); ?>')" -->
+                                                <!--        onclick="return confirm('Apakah Anda yakin ingin menghapus user ini?')"-->
+                                                <!--        class="text-red-600 hover:text-red-900 hover:underline transition duration-200">-->
+                                                <!--    Hapus-->
+                                                <!--</button>-->
                                             <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                         </td>
                                     </tr>

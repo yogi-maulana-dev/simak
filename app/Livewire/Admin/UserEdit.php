@@ -21,53 +21,82 @@ class UserEdit extends Component
     public $role_id = '';
     public $fakultas_id = '';
     public $prodi_id = '';
-    
+
     public $prodis = [];
     public $fakultas = [];
     public $roles = [];
-    
+
+    // Properti untuk menyimpan nama role yang dipilih (untuk keperluan tampilan)
+    public $selectedRoleName = null;
+
     public function mount(User $user)
     {
-        // Cek hanya superadmin yang bisa akses
         $currentUser = Auth::user();
-        if (!$currentUser || $currentUser->role->name !== 'superadmin') {
+
+        if (!$currentUser || $currentUser->role?->name !== 'superadmin') {
             abort(403, 'Unauthorized access.');
         }
-        
+
         $this->user = $user;
-        
-        // Set nilai form dari user
+
         $this->name = $user->name;
         $this->email = $user->email;
         $this->role_id = $user->role_id;
         $this->fakultas_id = $user->fakultas_id;
         $this->prodi_id = $user->prodi_id;
-        
-        // Load data
-        $this->roles = Role::whereIn('name', ['admin_univ', 'admin_fakultas', 'admin_prodi', 'asesor_fakultas', 'asesor_prodi'])->get();
+
+        // Set nama role awal
+        $this->updateSelectedRoleName();
+
+        $this->roles = Role::whereIn('name', [
+            'admin_univ',
+            'admin_fakultas',
+            'admin_prodi',
+            'asesor_fakultas',
+            'asesor_prodi'
+        ])->get();
+
         $this->fakultas = Fakultas::orderBy('nama_fakultas')->get();
-        
-        // Load prodis jika user adalah admin_prodi
-        if ($user->role->name === 'admin_prodi' && $user->prodi_id) {
+
+        // Load prodi jika user adalah admin_prodi dan memiliki prodi
+        if ($user->role?->name === 'admin_prodi' && $user->prodi_id) {
             $this->prodis = Prodi::where('fakultas_id', $user->fakultas_id)
                 ->orderBy('nama_prodi')
                 ->get();
         }
     }
-    
+
+    /**
+     * Hook yang dipanggil setiap kali ada properti yang berubah
+     */
     public function updated($propertyName)
     {
         if ($propertyName === 'role_id') {
             $this->reset(['fakultas_id', 'prodi_id', 'prodis']);
+            $this->updateSelectedRoleName();
         }
-        
+
         if ($propertyName === 'fakultas_id' && $this->fakultas_id) {
+            $this->prodi_id = ''; // Reset prodi_id saat fakultas berubah
             $this->prodis = Prodi::where('fakultas_id', $this->fakultas_id)
                 ->orderBy('nama_prodi')
                 ->get();
         }
     }
-    
+
+    /**
+     * Update properti selectedRoleName berdasarkan role_id yang dipilih
+     */
+    protected function updateSelectedRoleName()
+    {
+        if ($this->role_id) {
+            $role = Role::find($this->role_id);
+            $this->selectedRoleName = $role?->name;
+        } else {
+            $this->selectedRoleName = null;
+        }
+    }
+
     public function rules()
     {
         $rules = [
@@ -75,27 +104,25 @@ class UserEdit extends Component
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $this->user->id],
             'role_id' => ['required', 'exists:roles,id'],
         ];
-        
-        // Password optional untuk update
+
         if ($this->password) {
             $rules['password'] = ['required', 'string', 'confirmed', Rules\Password::defaults()];
         }
-        
-        // Validasi conditional berdasarkan role
+
         if ($this->role_id) {
             $role = Role::find($this->role_id);
             if ($role && $role->name === 'admin_fakultas') {
                 $rules['fakultas_id'] = ['required', 'exists:fakultas,id'];
             }
-            
             if ($role && $role->name === 'admin_prodi') {
+                $rules['fakultas_id'] = ['required', 'exists:fakultas,id'];
                 $rules['prodi_id'] = ['required', 'exists:prodi,id'];
             }
         }
-        
+
         return $rules;
     }
-    
+
     public function messages()
     {
         return [
@@ -104,34 +131,33 @@ class UserEdit extends Component
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
         ];
     }
-    
+
     public function update()
     {
         $this->validate();
-        
+
         try {
-            // Dapatkan role yang dipilih
             $role = Role::find($this->role_id);
-            
-            // Tentukan fakultas_id dan prodi_id berdasarkan role
+            if (!$role) {
+                session()->flash('error', 'Role tidak ditemukan.');
+                return;
+            }
+
             $fakultas_id = null;
             $prodi_id = null;
-            
+
             if ($role->name === 'admin_fakultas') {
                 $fakultas_id = $this->fakultas_id;
-                $prodi_id = null;
-            } 
-            elseif ($role->name === 'admin_prodi') {
-                // Untuk admin_prodi, dapatkan fakultas dari prodi yang dipilih
+            } elseif ($role->name === 'admin_prodi') {
                 $prodi = Prodi::find($this->prodi_id);
-                if ($prodi) {
-                    $fakultas_id = $prodi->fakultas_id;
-                    $prodi_id = $this->prodi_id;
+                if (!$prodi) {
+                    session()->flash('error', 'Prodi tidak ditemukan.');
+                    return;
                 }
+                $fakultas_id = $prodi->fakultas_id;
+                $prodi_id = $this->prodi_id;
             }
-            // Untuk admin_univ, asesor_fakultas, asesor_prodi: fakultas_id = null, prodi_id = null
-            
-            // Update user
+
             $this->user->update([
                 'name' => $this->name,
                 'email' => $this->email,
@@ -139,30 +165,23 @@ class UserEdit extends Component
                 'fakultas_id' => $fakultas_id,
                 'prodi_id' => $prodi_id,
             ]);
-            
-            // Update password jika diisi
+
             if ($this->password) {
                 $this->user->update([
                     'password' => Hash::make($this->password),
                 ]);
             }
-            
+
             session()->flash('success', 'User berhasil diperbarui!');
-            
-            // Redirect ke halaman daftar user
             return $this->redirect(route('admin.users.index'), navigate: true);
-            
+
         } catch (\Exception $e) {
             session()->flash('error', 'Gagal memperbarui user: ' . $e->getMessage());
         }
     }
-    
+
     public function render()
     {
-        return view('livewire.admin.user-edit', [
-            'roles' => $this->roles,
-            'fakultas' => $this->fakultas,
-            'prodis' => $this->prodis,
-        ])->layout('layouts.app');
+        return view('livewire.admin.user-edit')->layout('layouts.app');
     }
 }

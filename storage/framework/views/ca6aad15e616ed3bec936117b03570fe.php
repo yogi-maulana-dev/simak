@@ -25,7 +25,11 @@
             <!-- Desktop Navigation -->
             <div class="hidden md:flex items-center space-x-1">
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->guard()->check()): ?>
-                    <!-- Menu untuk semua user yang login -->
+                    <?php
+                        $user = auth()->user();
+                    ?>
+
+                    <!-- Dashboard untuk semua user -->
                     <a href="<?php echo e(route('dashboard')); ?>" 
                        class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 <?php echo e(request()->routeIs('dashboard') ? 'bg-muhammadiyah-100 text-muhammadiyah-700' : 'text-gray-600 hover:text-muhammadiyah-600 hover:bg-muhammadiyah-50'); ?>">
                         <span class="flex items-center">
@@ -35,19 +39,30 @@
                             Dashboard
                         </span>
                     </a>
-                    
-                    <a href="<?php echo e(route('arsip.index')); ?>" 
-                       class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 <?php echo e(request()->routeIs('arsip.*') ? 'bg-muhammadiyah-100 text-muhammadiyah-700' : 'text-gray-600 hover:text-muhammadiyah-600 hover:bg-muhammadiyah-50'); ?>">
-                        <span class="flex items-center">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
-                            </svg>
-                            Arsip
-                        </span>
-                    </a>
+
+                    <!-- Menu Arsip (dinamis berdasarkan role) -->
+                    <?php
+                        $arsipRoute = null;
+                        if ($user->isAdminFakultas() || $user->isAdminProdi()) {
+                            $arsipRoute = route('arsip.index');
+                        } elseif ($user->isAssesor()) {  // pastikan nama method sesuai (isAssessor?)
+                            $arsipRoute = route('data-arsip.index');
+                        }
+                    ?>
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($arsipRoute): ?>
+                        <a href="<?php echo e($arsipRoute); ?>" 
+                           class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 <?php echo e(request()->routeIs('arsip.*') || request()->routeIs('data-arsip.*') ? 'bg-muhammadiyah-100 text-muhammadiyah-700' : 'text-gray-600 hover:text-muhammadiyah-600 hover:bg-muhammadiyah-50'); ?>">
+                            <span class="flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                                </svg>
+                                Arsip
+                            </span>
+                        </a>
+                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
                     <!-- Menu khusus Superadmin -->
-                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->user()->isSuperadmin()): ?>
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($user->isSuperadmin()): ?>
                         <a href="<?php echo e(route('admin.arsip.index')); ?>" 
                            class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 <?php echo e(request()->routeIs('admin.arsip.*') ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'); ?>">
                             <span class="flex items-center">
@@ -68,20 +83,18 @@
                             </span>
                         </a>
                     <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
-                <!-- User Dropdown -->
-                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->guard()->check()): ?>
+                    <!-- User Dropdown -->
                     <div class="relative ml-4" x-data="{ dropdownOpen: false }">
                         <button @click="dropdownOpen = !dropdownOpen" 
                                 class="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-muhammadiyah-50 transition-all duration-200">
                             <div class="w-8 h-8 bg-gradient-to-br from-muhammadiyah-400 to-muhammadiyah-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                <?php echo e(strtoupper(substr(Auth::user()->name, 0, 1))); ?>
+                                <?php echo e(strtoupper(substr($user->name, 0, 1))); ?>
 
                             </div>
                             <div class="text-left hidden md:block">
-                                <p class="text-sm font-medium text-gray-700"><?php echo e(Auth::user()->name); ?></p>
-                                <p class="text-xs text-muhammadiyah-500"><?php echo e(Auth::user()->email); ?></p>
+                                <p class="text-sm font-medium text-gray-700"><?php echo e($user->name); ?></p>
+                                <p class="text-xs text-muhammadiyah-500"><?php echo e($user->email); ?></p>
                             </div>
                             <svg class="w-4 h-4 text-gray-500" :class="{ 'transform rotate-180': dropdownOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -103,16 +116,16 @@
                             <div class="px-4 py-3 border-b border-muhammadiyah-100">
                                 <div class="flex items-center justify-between">
                                     <div>
-                                        <p class="text-sm font-medium text-gray-900"><?php echo e(Auth::user()->name); ?></p>
-                                        <p class="text-xs text-gray-500 truncate"><?php echo e(Auth::user()->email); ?></p>
+                                        <p class="text-sm font-medium text-gray-900"><?php echo e($user->name); ?></p>
+                                        <p class="text-xs text-gray-500 truncate"><?php echo e($user->email); ?></p>
                                     </div>
                                     <span class="px-2 py-1 text-xs font-semibold rounded-full 
-                                        <?php if(auth()->user()->isSuperadmin()): ?> bg-purple-100 text-purple-800
-                                        <?php elseif(auth()->user()->role->name === 'admin_univ'): ?> bg-blue-100 text-blue-800
-                                        <?php elseif(auth()->user()->role->name === 'admin_fakultas'): ?> bg-green-100 text-green-800
-                                        <?php elseif(auth()->user()->role->name === 'admin_prodi'): ?> bg-indigo-100 text-indigo-800
+                                        <?php if($user->isSuperadmin()): ?> bg-purple-100 text-purple-800
+                                        <?php elseif($user->role->name === 'admin_univ'): ?> bg-blue-100 text-blue-800
+                                        <?php elseif($user->role->name === 'admin_fakultas'): ?> bg-green-100 text-green-800
+                                        <?php elseif($user->role->name === 'admin_prodi'): ?> bg-indigo-100 text-indigo-800
                                         <?php else: ?> bg-gray-100 text-gray-800 <?php endif; ?>">
-                                        <?php echo e(Auth::user()->role->name ?? 'user'); ?>
+                                        <?php echo e($user->role->name ?? 'user'); ?>
 
                                     </span>
                                 </div>
@@ -168,17 +181,31 @@
         <div class="md:hidden" x-show="open" x-transition>
             <div class="pt-2 pb-3 space-y-1">
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->guard()->check()): ?>
+                    <?php
+                        $user = auth()->user();
+                    ?>
+
                     <a href="<?php echo e(route('dashboard')); ?>" 
                        class="block pl-3 pr-4 py-2 rounded-lg text-base font-medium <?php echo e(request()->routeIs('dashboard') ? 'bg-muhammadiyah-50 text-muhammadiyah-700 border-l-4 border-muhammadiyah-500' : 'text-gray-600 hover:bg-muhammadiyah-50 hover:text-muhammadiyah-700 hover:border-l-4 hover:border-muhammadiyah-300'); ?>">
                         Dashboard
                     </a>
-                    
-                    <a href="<?php echo e(route('arsip.index')); ?>" 
-                       class="block pl-3 pr-4 py-2 rounded-lg text-base font-medium <?php echo e(request()->routeIs('arsip.*') ? 'bg-muhammadiyah-50 text-muhammadiyah-700 border-l-4 border-muhammadiyah-500' : 'text-gray-600 hover:bg-muhammadiyah-50 hover:text-muhammadiyah-700 hover:border-l-4 hover:border-muhammadiyah-300'); ?>">
-                        Arsip
-                    </a>
 
-                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->user()->isSuperadmin()): ?>
+                    <?php
+                        $arsipRouteMobile = null;
+                        if ($user->isAdminFakultas() || $user->isAdminProdi()) {
+                            $arsipRouteMobile = route('arsip.index');
+                        } elseif ($user->isAssesor()) {
+                            $arsipRouteMobile = route('data-arsip.index');
+                        }
+                    ?>
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($arsipRouteMobile): ?>
+                        <a href="<?php echo e($arsipRouteMobile); ?>" 
+                           class="block pl-3 pr-4 py-2 rounded-lg text-base font-medium <?php echo e(request()->routeIs('arsip.*') || request()->routeIs('data-arsip.*') ? 'bg-muhammadiyah-50 text-muhammadiyah-700 border-l-4 border-muhammadiyah-500' : 'text-gray-600 hover:bg-muhammadiyah-50 hover:text-muhammadiyah-700 hover:border-l-4 hover:border-muhammadiyah-300'); ?>">
+                            Arsip
+                        </a>
+                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($user->isSuperadmin()): ?>
                         <a href="<?php echo e(route('admin.arsip.index')); ?>" 
                            class="block pl-3 pr-4 py-2 rounded-lg text-base font-medium <?php echo e(request()->routeIs('admin.arsip.*') ? 'bg-purple-50 text-purple-700 border-l-4 border-purple-500' : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700 hover:border-l-4 hover:border-purple-300'); ?>">
                             Admin Arsip
@@ -197,15 +224,15 @@
                     <div class="flex items-center px-4">
                         <div class="flex-shrink-0">
                             <div class="w-10 h-10 bg-gradient-to-br from-muhammadiyah-400 to-muhammadiyah-600 rounded-full flex items-center justify-center text-white font-bold">
-                                <?php echo e(strtoupper(substr(Auth::user()->name, 0, 1))); ?>
+                                <?php echo e(strtoupper(substr(auth()->user()->name, 0, 1))); ?>
 
                             </div>
                         </div>
                         <div class="ml-3">
-                            <div class="text-base font-medium text-gray-800"><?php echo e(Auth::user()->name); ?></div>
-                            <div class="text-sm font-medium text-gray-500"><?php echo e(Auth::user()->email); ?></div>
+                            <div class="text-base font-medium text-gray-800"><?php echo e(auth()->user()->name); ?></div>
+                            <div class="text-sm font-medium text-gray-500"><?php echo e(auth()->user()->email); ?></div>
                             <div class="text-xs text-gray-500 mt-1">
-                                Role: <span class="font-semibold"><?php echo e(Auth::user()->role->name ?? 'user'); ?></span>
+                                Role: <span class="font-semibold"><?php echo e(auth()->user()->role->name ?? 'user'); ?></span>
                             </div>
                         </div>
                     </div>

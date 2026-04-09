@@ -73,7 +73,7 @@
                             <label for="role_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Role
                             </label>
-                            <select id="role_id" wire:model="role_id" wire:change="updatedRoleId"
+                            <select id="role_id" wire:model="role_id"
                                 class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                 required>
                                 <option value="">Pilih Role</option>
@@ -89,12 +89,12 @@
                         </div>
                         
                         <!-- Fakultas (conditional) -->
-                        @if($role_id && in_array(Role::find($role_id)?->name, ['admin_fakultas', 'admin_prodi']))
+                        @if($selectedRoleName && in_array($selectedRoleName, ['admin_fakultas', 'admin_prodi']))
                             <div>
                                 <label for="fakultas_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Fakultas
                                 </label>
-                                <select id="fakultas_id" wire:model="fakultas_id" wire:change="updatedFakultasId"
+                                <select id="fakultas_id" wire:model="fakultas_id"
                                     class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                     required>
                                     <option value="">Pilih Fakultas</option>
@@ -107,7 +107,7 @@
                         @endif
                         
                         <!-- Prodi (hanya untuk admin_prodi) -->
-                        @if($role_id && Role::find($role_id)?->name === 'admin_prodi')
+                        @if($selectedRoleName === 'admin_prodi')
                             <div>
                                 <label for="prodi_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Program Studi

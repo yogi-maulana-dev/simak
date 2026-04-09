@@ -24,7 +24,11 @@
             <!-- Desktop Navigation -->
             <div class="hidden md:flex items-center space-x-1">
                 @auth
-                    <!-- Menu untuk semua user yang login -->
+                    @php
+                        $user = auth()->user();
+                    @endphp
+
+                    <!-- Dashboard untuk semua user -->
                     <a href="{{ route('dashboard') }}" 
                        class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('dashboard') ? 'bg-muhammadiyah-100 text-muhammadiyah-700' : 'text-gray-600 hover:text-muhammadiyah-600 hover:bg-muhammadiyah-50' }}">
                         <span class="flex items-center">
@@ -34,19 +38,30 @@
                             Dashboard
                         </span>
                     </a>
-                    
-                    <a href="{{ route('arsip.index') }}" 
-                       class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('arsip.*') ? 'bg-muhammadiyah-100 text-muhammadiyah-700' : 'text-gray-600 hover:text-muhammadiyah-600 hover:bg-muhammadiyah-50' }}">
-                        <span class="flex items-center">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
-                            </svg>
-                            Arsip
-                        </span>
-                    </a>
+
+                    <!-- Menu Arsip (dinamis berdasarkan role) -->
+                    @php
+                        $arsipRoute = null;
+                        if ($user->isAdminFakultas() || $user->isAdminProdi()) {
+                            $arsipRoute = route('arsip.index');
+                        } elseif ($user->isAssesor()) {  // pastikan nama method sesuai (isAssessor?)
+                            $arsipRoute = route('data-arsip.index');
+                        }
+                    @endphp
+                    @if($arsipRoute)
+                        <a href="{{ $arsipRoute }}" 
+                           class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('arsip.*') || request()->routeIs('data-arsip.*') ? 'bg-muhammadiyah-100 text-muhammadiyah-700' : 'text-gray-600 hover:text-muhammadiyah-600 hover:bg-muhammadiyah-50' }}">
+                            <span class="flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                                </svg>
+                                Arsip
+                            </span>
+                        </a>
+                    @endif
 
                     <!-- Menu khusus Superadmin -->
-                    @if(auth()->user()->isSuperadmin())
+                    @if($user->isSuperadmin())
                         <a href="{{ route('admin.arsip.index') }}" 
                            class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.arsip.*') ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50' }}">
                             <span class="flex items-center">
@@ -67,19 +82,17 @@
                             </span>
                         </a>
                     @endif
-                @endauth
 
-                <!-- User Dropdown -->
-                @auth
+                    <!-- User Dropdown -->
                     <div class="relative ml-4" x-data="{ dropdownOpen: false }">
                         <button @click="dropdownOpen = !dropdownOpen" 
                                 class="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-muhammadiyah-50 transition-all duration-200">
                             <div class="w-8 h-8 bg-gradient-to-br from-muhammadiyah-400 to-muhammadiyah-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                                {{ strtoupper(substr($user->name, 0, 1)) }}
                             </div>
                             <div class="text-left hidden md:block">
-                                <p class="text-sm font-medium text-gray-700">{{ Auth::user()->name }}</p>
-                                <p class="text-xs text-muhammadiyah-500">{{ Auth::user()->email }}</p>
+                                <p class="text-sm font-medium text-gray-700">{{ $user->name }}</p>
+                                <p class="text-xs text-muhammadiyah-500">{{ $user->email }}</p>
                             </div>
                             <svg class="w-4 h-4 text-gray-500" :class="{ 'transform rotate-180': dropdownOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -101,16 +114,16 @@
                             <div class="px-4 py-3 border-b border-muhammadiyah-100">
                                 <div class="flex items-center justify-between">
                                     <div>
-                                        <p class="text-sm font-medium text-gray-900">{{ Auth::user()->name }}</p>
-                                        <p class="text-xs text-gray-500 truncate">{{ Auth::user()->email }}</p>
+                                        <p class="text-sm font-medium text-gray-900">{{ $user->name }}</p>
+                                        <p class="text-xs text-gray-500 truncate">{{ $user->email }}</p>
                                     </div>
                                     <span class="px-2 py-1 text-xs font-semibold rounded-full 
-                                        @if(auth()->user()->isSuperadmin()) bg-purple-100 text-purple-800
-                                        @elseif(auth()->user()->role->name === 'admin_univ') bg-blue-100 text-blue-800
-                                        @elseif(auth()->user()->role->name === 'admin_fakultas') bg-green-100 text-green-800
-                                        @elseif(auth()->user()->role->name === 'admin_prodi') bg-indigo-100 text-indigo-800
+                                        @if($user->isSuperadmin()) bg-purple-100 text-purple-800
+                                        @elseif($user->role->name === 'admin_univ') bg-blue-100 text-blue-800
+                                        @elseif($user->role->name === 'admin_fakultas') bg-green-100 text-green-800
+                                        @elseif($user->role->name === 'admin_prodi') bg-indigo-100 text-indigo-800
                                         @else bg-gray-100 text-gray-800 @endif">
-                                        {{ Auth::user()->role->name ?? 'user' }}
+                                        {{ $user->role->name ?? 'user' }}
                                     </span>
                                 </div>
                             </div>
@@ -165,17 +178,31 @@
         <div class="md:hidden" x-show="open" x-transition>
             <div class="pt-2 pb-3 space-y-1">
                 @auth
+                    @php
+                        $user = auth()->user();
+                    @endphp
+
                     <a href="{{ route('dashboard') }}" 
                        class="block pl-3 pr-4 py-2 rounded-lg text-base font-medium {{ request()->routeIs('dashboard') ? 'bg-muhammadiyah-50 text-muhammadiyah-700 border-l-4 border-muhammadiyah-500' : 'text-gray-600 hover:bg-muhammadiyah-50 hover:text-muhammadiyah-700 hover:border-l-4 hover:border-muhammadiyah-300' }}">
                         Dashboard
                     </a>
-                    
-                    <a href="{{ route('arsip.index') }}" 
-                       class="block pl-3 pr-4 py-2 rounded-lg text-base font-medium {{ request()->routeIs('arsip.*') ? 'bg-muhammadiyah-50 text-muhammadiyah-700 border-l-4 border-muhammadiyah-500' : 'text-gray-600 hover:bg-muhammadiyah-50 hover:text-muhammadiyah-700 hover:border-l-4 hover:border-muhammadiyah-300' }}">
-                        Arsip
-                    </a>
 
-                    @if(auth()->user()->isSuperadmin())
+                    @php
+                        $arsipRouteMobile = null;
+                        if ($user->isAdminFakultas() || $user->isAdminProdi()) {
+                            $arsipRouteMobile = route('arsip.index');
+                        } elseif ($user->isAssesor()) {
+                            $arsipRouteMobile = route('data-arsip.index');
+                        }
+                    @endphp
+                    @if($arsipRouteMobile)
+                        <a href="{{ $arsipRouteMobile }}" 
+                           class="block pl-3 pr-4 py-2 rounded-lg text-base font-medium {{ request()->routeIs('arsip.*') || request()->routeIs('data-arsip.*') ? 'bg-muhammadiyah-50 text-muhammadiyah-700 border-l-4 border-muhammadiyah-500' : 'text-gray-600 hover:bg-muhammadiyah-50 hover:text-muhammadiyah-700 hover:border-l-4 hover:border-muhammadiyah-300' }}">
+                            Arsip
+                        </a>
+                    @endif
+
+                    @if($user->isSuperadmin())
                         <a href="{{ route('admin.arsip.index') }}" 
                            class="block pl-3 pr-4 py-2 rounded-lg text-base font-medium {{ request()->routeIs('admin.arsip.*') ? 'bg-purple-50 text-purple-700 border-l-4 border-purple-500' : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700 hover:border-l-4 hover:border-purple-300' }}">
                             Admin Arsip
@@ -194,14 +221,14 @@
                     <div class="flex items-center px-4">
                         <div class="flex-shrink-0">
                             <div class="w-10 h-10 bg-gradient-to-br from-muhammadiyah-400 to-muhammadiyah-600 rounded-full flex items-center justify-center text-white font-bold">
-                                {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                             </div>
                         </div>
                         <div class="ml-3">
-                            <div class="text-base font-medium text-gray-800">{{ Auth::user()->name }}</div>
-                            <div class="text-sm font-medium text-gray-500">{{ Auth::user()->email }}</div>
+                            <div class="text-base font-medium text-gray-800">{{ auth()->user()->name }}</div>
+                            <div class="text-sm font-medium text-gray-500">{{ auth()->user()->email }}</div>
                             <div class="text-xs text-gray-500 mt-1">
-                                Role: <span class="font-semibold">{{ Auth::user()->role->name ?? 'user' }}</span>
+                                Role: <span class="font-semibold">{{ auth()->user()->role->name ?? 'user' }}</span>
                             </div>
                         </div>
                     </div>

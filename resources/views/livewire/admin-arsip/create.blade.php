@@ -137,18 +137,41 @@
                             </div>
 
                             {{-- Public Access --}}
-                            <div class="md:col-span-2">
-                                <div class="flex items-center">
-                                    <input type="checkbox" wire:model="is_public" id="is_public"
-                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                    <label for="is_public" class="ml-2 block text-sm text-gray-900">
-                                        Arsip dapat diakses publik (tanpa login)
-                                    </label>
-                                </div>
-                                <p class="mt-1 text-xs text-gray-500">
-                                    Jika dicentang, arsip dapat dilihat oleh siapa saja tanpa perlu login ke sistem.
-                                </p>
-                            </div>
+                {{-- Public Access --}}
+<div class="md:col-span-2">
+    <div class="p-4 border rounded-lg bg-gray-50">
+        <div class="flex items-start justify-between">
+            <div>
+                <h3 class="text-sm font-semibold text-gray-800">
+                    Akses Publik
+                </h3>
+                <p class="text-xs text-gray-600 mt-1">
+                    Jika diaktifkan, arsip akan tampil di landing page dan bisa diakses tanpa login.
+                </p>
+            </div>
+
+            <label class="inline-flex items-center cursor-pointer">
+                <input type="checkbox" wire:model.live="is_public" class="sr-only peer">
+                <div class="relative w-11 h-6 bg-gray-300 rounded-full peer 
+                            peer-checked:bg-blue-600 
+                            after:content-[''] after:absolute after:top-0.5 after:left-0.5 
+                            after:bg-white after:border after:rounded-full after:h-5 after:w-5 
+                            after:transition-all peer-checked:after:translate-x-5">
+                </div>
+            </label>
+        </div>
+
+        @if($is_public)
+            <p class="mt-3 text-xs text-green-600 font-medium">
+                ✓ Arsip ini akan tampil di landing page (publik).
+            </p>
+        @else
+            <p class="mt-3 text-xs text-red-600 font-medium">
+                ✕ Arsip ini hanya bisa diakses setelah login.
+            </p>
+        @endif
+    </div>
+</div>
                         </div>
 
                         {{-- Action Buttons --}}

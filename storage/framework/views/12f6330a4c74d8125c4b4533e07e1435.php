@@ -36,7 +36,7 @@
                 </svg>
             </div>
             <h2 class="text-3xl font-bold text-gray-800 mb-2">Selamat Datang</h2>
-            <p class="text-muhammadiyah-600 font-medium">Masuk ke Sistem Informasi Akademik</p>
+            <p class="text-muhammadiyah-600 font-medium">Masuk ke Sistem Arsip Akademik</p>
         </div>
 
         <form method="POST" action="<?php echo e(route('login')); ?>" class="space-y-6">

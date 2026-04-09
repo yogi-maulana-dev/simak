@@ -22,6 +22,7 @@ class Create extends Component
     public $prodi_id;
     public $file;
     public $prodis = [];
+    public $is_public = 0;
 
     protected $rules = [
         'judul' => 'required|string|max:255',
@@ -80,6 +81,7 @@ class Create extends Component
         'file'        => $filePath,
         'user_id'     => $user->id,
         'fakultas_id' => $user->fakultas_id,
+        'is_public'   => $this->is_public ? 1 : 0,
     ]);
 
         DataFakultas::create([
@@ -101,6 +103,7 @@ class Create extends Component
         'user_id'     => $user->id,
         'fakultas_id' => $user->fakultas_id,
         'prodi_id'    => $user->prodi_id,
+             'is_public'   => $this->is_public ? 1 : 0,
     ]);
 
         DataProdis::create([

@@ -35,6 +35,7 @@ class Arsip extends Model
         'user_id',
         'fakultas_id',
         'prodi_id',
+         'is_public',
     ];
 
 
