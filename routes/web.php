@@ -3,11 +3,14 @@
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Prodi;
+use App\Models\Fakultas;
 use App\Mail\PasswordResetTokenMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\TokenResetPasswordController;
+use App\Models\Arsip;
+use Illuminate\Http\Request;
 
 Route::get('/', function () {
     return view('welcome');
@@ -80,6 +83,25 @@ Route::get('/test-email', function () {
     Mail::to($user->email)->send(new PasswordResetTokenMail($user, $token, $expiresAt));
     
     return 'Email sent to ' . $user->email;
+});
+
+
+Route::get('/', function (Request $request) {
+    $search = $request->get('search');
+
+    $query = Arsip::with(['fakultas', 'prodi'])
+        ->where('is_public', true);
+
+    if ($search) {
+        $query->where(function ($q) use ($search) {
+            $q->where('judul', 'like', "%{$search}%")
+              ->orWhere('deskripsi', 'like', "%{$search}%");
+        });
+    }
+
+    $arsipPublik = $query->orderBy('created_at', 'desc')->paginate(10);
+
+    return view('welcome', compact('arsipPublik', 'search'));
 });
 
 require __DIR__.'/auth.php';
