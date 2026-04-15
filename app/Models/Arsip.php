@@ -53,6 +53,11 @@ public function prodi(): BelongsTo
     return $this->belongsTo(Prodi::class, 'prodi_id');
 }
 
+ public function dataFakultas()
+    {
+        return $this->hasMany(DataFakultas::class, 'arsip_id', 'id');
+    }
+    
     /**
      * Get the file URL.
      */
