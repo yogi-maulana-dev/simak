@@ -3,159 +3,75 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use App\Models\FolderPermission;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasUuids;
-    
-    protected $keyType = 'string';
-    public $incrementing = false;
-    
+    /** @use HasFactory<\Database\Factories\UserFactory> */
+    use HasFactory, Notifiable;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
     protected $fillable = [
         'name',
         'email',
         'password',
-        'role_id',
-        'fakultas_id',
-        'prodi_id',
     ];
 
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var list<string>
+     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    public function arsips()
-    {
-        return $this->hasMany(Arsip::class);
-    }
-
-    public function role()
-    {
-        return $this->belongsTo(Role::class, 'role_id', 'id');
-    }
-    
-    public function fakultas()
-    {
-        return $this->belongsTo(Fakultas::class, 'fakultas_id', 'id');
-    }
-    
-    public function prodi()
-    {
-        return $this->belongsTo(Prodi::class, 'prodi_id', 'id');
-    }
-
-    // Helper methods
-    public function isSuperadmin()
-    {
-        return $this->role_id === 11111111-1111-1111-1111-111111111111 || ($this->role && $this->role->name === 'superadmin');
-    }
-    
-        public function isAdminUniv()
-    {
-        return $this->role_id === 22222222-2222-2222-2222-222222222222 || ($this->role && $this->role->name === 'admin_univ');
-    }
-    
-          public function isAdminFakultas()
-    {
-        return $this->role_id === 33333333-3333-3333-3333-333333333333 || ($this->role && $this->role->name === 'admin_fakultas');
-    }
-    
-
-      public function isAdminProdi()
-    {
-        return $this->role_id === 44444444-4444-4444-4444-444444444444 || ($this->role && $this->role->name === 'admin_prodi');
-    }
-
-    public function isAssesor()
-    {
-        return $this->role_id === 66666666-6666-6666-6666-666666666666 || ($this->role && $this->role->name === 'asesor_prodi');
-    }
-
-    public function isUser()
-    {
-        return $this->role_id === 3 || ($this->role && $this->role->name === 'user');
-    }
-
-    public function hasRole($roleName)
-    {
-        return $this->role && $this->role->name === $roleName;
-    }
-
-    public function hasRoleId($roleId)
-    {
-        return $this->role_id == $roleId;
-    }
-
-     
-
     /**
-     * Scope untuk user yang memiliki fakultas.
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
      */
-    public function scopeHasFakultas($query)
+    protected function casts(): array
     {
-        return $query->whereNotNull('fakultas_id');
-    }
-
-    /**
-     * Scope untuk user yang memiliki prodi.
-     */
-    public function scopeHasProdi($query)
-    {
-        return $query->whereNotNull('prodi_id');
-    }
-
-    /**
-     * Scope untuk user berdasarkan role.
-     */
-    public function scopeByRole($query, $roleName)
-    {
-        return $query->whereHas('role', function($q) use ($roleName) {
-            $q->where('name', $roleName);
-        });
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
     }
 
 
-     public function hasValidResetToken(): bool
-    {
-        return $this->reset_password_token && 
-               $this->reset_password_token_expires_at &&
-               Carbon::now()->lt($this->reset_password_token_expires_at);
-    }
+    public function folderPermissions(): HasMany
+{
+    return $this->hasMany(FolderPermission::class);
+}
 
-    /**
-     * Check if token matches
-     */
-    public function verifyResetToken($token): bool
-    {
-        return $this->hasValidResetToken() && 
-               Hash::check($token, $this->reset_password_token);
-    }
 
-    /**
-     * Clear reset token
-     */
-    public function clearResetToken(): void
-    {
-        $this->update([
-            'reset_password_token' => null,
-            'reset_password_token_expires_at' => null
-        ]);
-    }
+public function isAdmin(): bool
+{
+    // Sesuaikan dengan sistem role Anda:
+    return in_array($this->role, ['super_admin', 'admin_it']);
 
-    /**
-     * Scope for users with valid reset tokens
-     */
-    public function scopeWithValidResetToken($query)
-    {
-        return $query->whereNotNull('reset_password_token')
-                    ->where('reset_password_token_expires_at', '>', Carbon::now());
-    }
+    // Jika pakai Spatie Permission:
+    // return $this->hasAnyRole(['super_admin', 'admin_it']);
+}
+
+public function activeFolderIds(): array
+{
+    return $this->folderPermissions()
+        ->where(fn ($q) => $q->whereNull('expires_at')
+            ->orWhere('expires_at', '>', now()))
+        ->pluck('folder_id')
+        ->toArray();
+}
 
 }

@@ -28,16 +28,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // Get the authenticated user
-        $user = Auth::user();
-        
-        // Check user's role and redirect accordingly
-        if ($user->isSuperadmin()) {
-            return redirect()->intended(route('admin.arsip.index'));
-        }
-        
-        // For other roles, redirect to arsip.index
-        return redirect()->intended(route('arsip.index'));
+        return redirect()->intended(route('dashboard', absolute: false));
     }
 
     /**
