@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Support\MathCaptcha;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -28,8 +29,17 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string'],
+            'email'          => ['required', 'string', 'email'],
+            'password'       => ['required', 'string'],
+            'captcha_token'  => ['required', 'string'],
+            'captcha_answer' => ['required', 'string'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'captcha_answer.required' => 'Silakan isi jawaban captcha.',
         ];
     }
 
@@ -42,11 +52,35 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
+        // Verifikasi captcha SEBELUM mencoba auth
+        $captchaOk = MathCaptcha::verify(
+            (string) $this->input('captcha_token', ''),
+            $this->input('captcha_answer'),
+        );
+
+        if (! $captchaOk) {
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'captcha_answer' => 'Jawaban captcha salah atau sudah kedaluwarsa. Silakan coba lagi.',
+            ]);
+        }
+
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
+            ]);
+        }
+
+        // Cek apakah akun aktif
+        if (! Auth::user()->is_active) {
+            Auth::logout();
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => 'Akun Anda telah dinonaktifkan. Hubungi administrator.',
             ]);
         }
 

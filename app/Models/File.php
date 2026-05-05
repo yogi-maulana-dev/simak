@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class File extends Model
 {
@@ -80,4 +81,21 @@ class File extends Model
             default      => 'file text-gray-400',
         };
     }
+
+    // Tambahkan ke app/Models/File.php
+
+
+public function sharedLinks(): MorphMany
+{
+    return $this->morphMany(SharedLink::class, 'shareable');
+}
+
+public function activeSharedLink(): ?SharedLink
+{
+    return $this->sharedLinks()
+        ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+        ->latest()
+        ->first();
+}
+
 }

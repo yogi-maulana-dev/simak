@@ -13,7 +13,11 @@
     $isActive    = ($currentId == $folder->id);
     $isExpanded  = in_array($folder->id, $expandedIds);
     $hasChildren = ($folder->children_count ?? 0) > 0;
-    $indent      = $depth * 1.25; // dalam rem, konsisten dengan padding Tailwind
+    $indent      = $depth * 1.25; // dalam rem
+    $user        = auth()->user();
+    $canShare    = $user && (
+        $folder->created_by === $user->id || $user->isSuperAdmin()
+    );
 @endphp
 
 <li wire:key="tree-folder-{{ $folder->id }}" class="relative">
@@ -61,12 +65,36 @@
             </svg>
             <span class="truncate text-sm">{{ $folder->name }}</span>
         </button>
+
+        {{-- Tombol Bagikan — hanya muncul jika user boleh share & saat hover --}}
+        @if($canShare)
+            <button
+                wire:click.stop="openShareModal({{ $folder->id }}, 'folder', '{{ addslashes($folder->name) }}')"
+                x-on:click.stop
+                title="Bagikan folder ini"
+                class="flex-shrink-0 opacity-0 group-hover:opacity-100 p-1 rounded-md transition-all
+                       text-gray-400 hover:text-indigo-600 hover:bg-indigo-50
+                       dark:hover:text-indigo-400 dark:hover:bg-indigo-900/30
+                       focus:outline-none focus:opacity-100"
+            >
+                {{-- Ikon Share (seperti Google Drive) --}}
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M8.684 13.342C8.886 12.938 9 12.482 9 12s-.114-.938-.316-1.342
+                             m0 2.684a3 3 0 110-2.684
+                             m0 2.684l6.632 3.316
+                             m-6.632-6l6.632-3.316
+                             m0 0a3 3 0 105.367-2.684
+                             3 3 0 00-5.367 2.684z"/>
+                </svg>
+            </button>
+        @endif
     </div>
 
-    {{-- Children – dimuat hanya jika expanded (lazy loading) --}}
+    {{-- Children – dimuat hanya jika expanded --}}
     @if($isExpanded && $hasChildren)
         <div class="relative mt-0.5">
-            {{-- Indikator loading saat sidebarChildren sedang diambil --}}
+            {{-- Indikator loading --}}
             <div wire:loading.delay wire:target="toggleExpand({{ $folder->id }})"
                  class="absolute inset-0 bg-white/50 dark:bg-gray-800/50 flex items-center justify-center rounded-md z-10">
                 <svg class="w-4 h-4 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
@@ -77,7 +105,6 @@
 
             <ul class="space-y-0.5">
                 @php
-                    // Gunakan method sidebarChildren yang sudah disediakan Livewire
                     $children = $this->sidebarChildren($folder->id);
                 @endphp
                 @foreach ($children as $child)

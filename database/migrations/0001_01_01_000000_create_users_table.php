@@ -18,6 +18,8 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
               $table->string('role')->default('asesor'); // ✅ FIX
             $table->string('password');
+             $table->string('prodi')->nullable();
+    $table->string('kode_lamp')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

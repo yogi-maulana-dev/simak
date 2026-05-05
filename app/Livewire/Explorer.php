@@ -19,26 +19,34 @@ class Explorer extends Component
 {
     use WithFileUploads;
 
-    // ── State navigasi ────────────────────────────────────────────────────
+    // ── Navigasi ──────────────────────────────────────────────────────────
 
     public ?int $currentFolderId = null;
+    public array $folderHistory  = [];
+    public int   $historyIndex   = -1;
 
-    /** @var int[] */
-    public array $folderHistory = [];
-    public int   $historyIndex  = -1;
+    // ── UI ────────────────────────────────────────────────────────────────
 
-    // ── State UI ──────────────────────────────────────────────────────────
-
-    public string $viewMode           = 'grid'; // 'grid' | 'list'
+    public string $viewMode           = 'grid';
     public bool   $showNewFolderModal = false;
     public bool   $showUploadModal    = false;
     public bool   $showRenameModal    = false;
     public bool   $showDeleteModal    = false;
     public string $search             = '';
 
-    // ── Sidebar: expanded folder ids ──────────────────────────────────────
+    // ── Share ─────────────────────────────────────────────────────────────
 
-    /** @var int[] folder ids yang sedang di-expand di sidebar */
+    public bool    $showShareModal  = false;
+    public ?int    $shareItemId     = null;
+    public string  $shareItemType   = ''; // 'file' | 'folder'
+    public string  $shareItemName   = '';
+    public string  $sharePermission = 'download';
+    public ?string $shareExpiresAt  = null;
+    public ?string $shareUrl        = null;
+    public bool    $shareCopied     = false;
+
+    // ── Sidebar ───────────────────────────────────────────────────────────
+
     public array $expandedFolderIds = [];
 
     // ── Form: Buat Folder ─────────────────────────────────────────────────
@@ -51,10 +59,12 @@ class Explorer extends Component
 
     // ── Form: Rename ──────────────────────────────────────────────────────
 
-    #[Validate('required|string|max:255', message: ['required' => 'Nama wajib diisi.'])]
+    #[Validate('required|string|max:255', message: [
+        'required' => 'Nama wajib diisi.',
+    ])]
     public string $renameName     = '';
     public ?int   $renameItemId   = null;
-    public string $renameItemType = ''; // 'folder' | 'file'
+    public string $renameItemType = '';
 
     // ── Form: Delete ──────────────────────────────────────────────────────
 
@@ -68,17 +78,16 @@ class Explorer extends Component
         'uploads.*' => ['file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx'],
     ], message: [
         'uploads.*.max'   => 'Ukuran file maksimal 10 MB.',
-        'uploads.*.mimes' => 'Format file tidak didukung. Gunakan: PDF, Word, Excel, atau PowerPoint.',
+        'uploads.*.mimes' => 'Format tidak didukung. Gunakan: PDF, Word, Excel, atau PowerPoint.',
     ])]
     public array $uploads = [];
 
     // ── Selection ─────────────────────────────────────────────────────────
 
-    /** @var array<string, bool>  key = "{type}_{id}" */
     public array $selected = [];
 
     // ─────────────────────────────────────────────────────────────────────
-    // COMPUTED PROPERTIES
+    // COMPUTED
     // ─────────────────────────────────────────────────────────────────────
 
     #[Computed]
@@ -106,7 +115,10 @@ class Explorer extends Component
 
         if ($this->search) {
             $folders = $folders->filter(
-                fn (Folder $f) => str_contains(strtolower($f->name), strtolower($this->search))
+                fn (Folder $f) => str_contains(
+                    strtolower($f->name),
+                    strtolower($this->search)
+                )
             );
         }
 
@@ -120,9 +132,25 @@ class Explorer extends Component
             return collect();
         }
 
+        $user  = auth()->user();
         $query = File::where('folder_id', $this->currentFolderId)
             ->whereNull('deleted_at')
             ->with('uploader');
+
+        if (! $user->isSuperAdmin()) {
+            $folder = Folder::find($this->currentFolderId);
+            if ($folder && $folder->kode_lamp !== $user->kode_lamp) {
+                $hasPermission = $user->folderPermissions()
+                    ->where('folder_id', $this->currentFolderId)
+                    ->where(fn ($q) => $q->whereNull('expires_at')
+                        ->orWhere('expires_at', '>', now()))
+                    ->exists();
+
+                if (! $hasPermission) {
+                    return collect();
+                }
+            }
+        }
 
         if ($this->search) {
             $query->where('original_name', 'like', '%' . $this->search . '%');
@@ -142,13 +170,8 @@ class Explorer extends Component
         $folder = Folder::find($this->currentFolderId);
 
         while ($folder) {
-            array_unshift($crumbs, [
-                'id'   => $folder->id,
-                'name' => $folder->name,
-            ]);
-            $folder = $folder->parent_id
-                ? Folder::find($folder->parent_id)
-                : null;
+            array_unshift($crumbs, ['id' => $folder->id, 'name' => $folder->name]);
+            $folder = $folder->parent_id ? Folder::find($folder->parent_id) : null;
         }
 
         return $crumbs;
@@ -178,18 +201,27 @@ class Explorer extends Component
         return count(array_filter($this->selected));
     }
 
-    /**
-     * Apakah user aktif punya hak WRITE/ADMIN di folder aktif
-     * (dipakai di Blade untuk show/hide tombol aksi).
-     */
     #[Computed]
     public function canWriteCurrentFolder(): bool
     {
         if (! $this->currentFolderId) {
             return false;
         }
+
         $folder = Folder::find($this->currentFolderId);
         return $folder && $this->canWrite(auth()->user(), $folder);
+    }
+
+    #[Computed]
+    public function userCanCreateFolder(): bool
+    {
+        return auth()->user()->canCreateFolder();
+    }
+
+    #[Computed]
+    public function userCanUpload(): bool
+    {
+        return auth()->user()->canUpload();
     }
 
     public function sidebarChildren(int $folderId): Collection
@@ -203,6 +235,9 @@ class Explorer extends Component
 
     public function openFolder(int $folderId): void
     {
+        $folder = Folder::findOrFail($folderId);
+        abort_unless($this->canAccess(auth()->user(), $folder), 403);
+
         if ($this->historyIndex < count($this->folderHistory) - 1) {
             $this->folderHistory = array_slice($this->folderHistory, 0, $this->historyIndex + 1);
         }
@@ -301,6 +336,8 @@ class Explorer extends Component
             $this->canGoForward,
             $this->selectedCount,
             $this->canWriteCurrentFolder,
+            $this->userCanCreateFolder,
+            $this->userCanUpload,
         );
     }
 
@@ -310,6 +347,8 @@ class Explorer extends Component
 
     public function openNewFolderModal(): void
     {
+        abort_unless(auth()->user()->canCreateFolder(), 403);
+
         if (! $this->currentFolderId) {
             $this->dispatch('notify', type: 'warning', message: 'Pilih folder terlebih dahulu.');
             return;
@@ -324,16 +363,11 @@ class Explorer extends Component
     {
         $this->validateOnly('newFolderName');
 
-        $user = auth()->user();
-
-        abort_unless($this->currentFolderId, 422, 'Folder induk tidak dipilih.');
-
+        $user   = auth()->user();
         $parent = Folder::findOrFail($this->currentFolderId);
 
-        // ── Cek hak tulis, naik ke ancestor jika perlu ────────────────
         abort_unless($this->canWrite($user, $parent), 403, 'Akses ditolak.');
 
-        // Cek duplikasi nama di level ini
         $exists = Folder::where('parent_id', $this->currentFolderId)
             ->where('name', $this->newFolderName)
             ->whereNull('deleted_at')
@@ -350,6 +384,7 @@ class Explorer extends Component
             'path'       => $parent->buildPath() . '/' . $this->newFolderName,
             'created_by' => $user->id,
             'is_system'  => false,
+            'kode_lamp'  => $parent->kode_lamp ?? $user->kode_lamp,
         ]);
 
         if (! in_array($this->currentFolderId, $this->expandedFolderIds)) {
@@ -358,7 +393,6 @@ class Explorer extends Component
 
         $this->newFolderName      = '';
         $this->showNewFolderModal = false;
-
         $this->clearComputed();
 
         $this->dispatch('notify', type: 'success', message: 'Folder berhasil dibuat.');
@@ -370,12 +404,21 @@ class Explorer extends Component
 
     public function openRenameModal(int $id, string $type): void
     {
+        $user = auth()->user();
+
+        if ($type === 'folder') {
+            $folder = Folder::findOrFail($id);
+            abort_unless($this->canWrite($user, $folder), 403);
+            $this->renameName = $folder->name;
+        } else {
+            $file   = File::findOrFail($id);
+            $folder = Folder::findOrFail($file->folder_id);
+            abort_unless($this->canWrite($user, $folder), 403);
+            $this->renameName = $file->original_name;
+        }
+
         $this->renameItemId   = $id;
         $this->renameItemType = $type;
-        $this->renameName     = $type === 'folder'
-            ? Folder::findOrFail($id)->name
-            : File::findOrFail($id)->original_name;
-
         $this->resetValidation('renameName');
         $this->showRenameModal = true;
     }
@@ -384,12 +427,17 @@ class Explorer extends Component
     {
         $this->validateOnly('renameName');
 
+        $user = auth()->user();
+
         if ($this->renameItemType === 'folder') {
-            Folder::findOrFail($this->renameItemId)
-                ->update(['name' => $this->renameName]);
+            $folder = Folder::findOrFail($this->renameItemId);
+            abort_unless($this->canWrite($user, $folder), 403);
+            $folder->update(['name' => $this->renameName]);
         } else {
-            File::findOrFail($this->renameItemId)
-                ->update(['original_name' => $this->renameName]);
+            $file   = File::findOrFail($this->renameItemId);
+            $folder = Folder::findOrFail($file->folder_id);
+            abort_unless($this->canWrite($user, $folder), 403);
+            $file->update(['original_name' => $this->renameName]);
         }
 
         $this->showRenameModal = false;
@@ -403,23 +451,40 @@ class Explorer extends Component
 
     public function openDeleteModal(int $id, string $type, string $name): void
     {
-        $this->deleteItemId    = $id;
-        $this->deleteItemType  = $type;
-        $this->deleteItemName  = $name;
+        $user = auth()->user();
+
+        if ($type === 'folder') {
+            $folder = Folder::findOrFail($id);
+            abort_unless($this->canWrite($user, $folder), 403);
+        } else {
+            $file   = File::findOrFail($id);
+            $folder = Folder::findOrFail($file->folder_id);
+            abort_unless($this->canWrite($user, $folder), 403);
+        }
+
+        $this->deleteItemId   = $id;
+        $this->deleteItemType = $type;
+        $this->deleteItemName = $name;
         $this->showDeleteModal = true;
     }
 
     public function deleteItem(): void
     {
+        $user = auth()->user();
+
         if ($this->deleteItemType === 'folder') {
             $folder = Folder::findOrFail($this->deleteItemId);
+            abort_unless($this->canWrite($user, $folder), 403);
             $this->softDeleteFolderRecursive($folder);
 
             $this->expandedFolderIds = array_values(
                 array_filter($this->expandedFolderIds, fn ($id) => $id !== $this->deleteItemId)
             );
         } else {
-            $file = File::findOrFail($this->deleteItemId);
+            $file   = File::findOrFail($this->deleteItemId);
+            $folder = Folder::findOrFail($file->folder_id);
+            abort_unless($this->canWrite($user, $folder), 403);
+
             Storage::disk($file->disk)->delete($file->storagePath());
             $file->delete();
         }
@@ -451,6 +516,8 @@ class Explorer extends Component
 
     public function openUploadModal(): void
     {
+        abort_unless(auth()->user()->canUpload(), 403);
+
         if (! $this->currentFolderId) {
             $this->dispatch('notify', type: 'warning', message: 'Pilih folder terlebih dahulu.');
             return;
@@ -498,7 +565,6 @@ class Explorer extends Component
 
         $this->uploads         = [];
         $this->showUploadModal = false;
-
         $this->clearComputed();
 
         $this->dispatch('notify', type: 'success', message: "{$count} file berhasil diunggah.");
@@ -510,7 +576,17 @@ class Explorer extends Component
 
     public function downloadFile(int $fileId): mixed
     {
-        $file = File::findOrFail($fileId);
+        $file   = File::findOrFail($fileId);
+        $user   = auth()->user();
+        $folder = Folder::findOrFail($file->folder_id);
+
+        abort_unless($this->canAccess($user, $folder), 403);
+
+        \App\Support\ActivityLogger::log(
+            action: 'file_download',
+            description: "Mengunduh file \"{$file->original_name}\"",
+            subject: $file,
+        );
 
         return Storage::disk($file->disk)
             ->download($file->storagePath(), $file->original_name);
@@ -559,6 +635,141 @@ class Explorer extends Component
     }
 
     // ─────────────────────────────────────────────────────────────────────
+    // SHARE
+    // ─────────────────────────────────────────────────────────────────────
+
+    public function openShareModal(int $id, string $type, string $name): void
+    {
+        $user = auth()->user();
+
+        if ($type === 'file') {
+            $file = File::findOrFail($id);
+
+            // Hanya uploader atau super_admin
+            if (! ($file->uploaded_by === $user->id || $user->isSuperAdmin())) {
+                $this->dispatch('notify',
+                    type: 'warning',
+                    message: 'Hanya pengunggah atau Super Admin yang dapat berbagi file ini.'
+                );
+                return;
+            }
+        } else {
+            $folder = Folder::findOrFail($id);
+
+            // Hanya pembuat folder atau super_admin
+            if (! ($folder->created_by === $user->id || $user->isSuperAdmin())) {
+                $this->dispatch('notify',
+                    type: 'warning',
+                    message: 'Hanya pembuat folder atau Super Admin yang dapat berbagi folder ini.'
+                );
+                return;
+            }
+        }
+
+        $this->shareItemId     = $id;
+        $this->shareItemType   = $type;
+        $this->shareItemName   = $name;
+        $this->sharePermission = 'download';
+        $this->shareExpiresAt  = null;
+        $this->shareCopied     = false;
+
+        // Cek apakah sudah punya link aktif
+        $model            = $type === 'file'
+            ? File::find($id)
+            : Folder::find($id);
+        $activeLink       = $model?->activeSharedLink();
+        $this->shareUrl   = $activeLink?->url();
+
+        // Jika ada link aktif, isi ulang permission & expires dari data tersimpan
+        if ($activeLink) {
+            $this->sharePermission = $activeLink->permission;
+            $this->shareExpiresAt  = $activeLink->expires_at?->format('Y-m-d\TH:i');
+        }
+
+        $this->showShareModal = true;
+    }
+
+    public function createShareLink(): void
+    {
+        $this->validate([
+            'sharePermission' => 'required|in:view,download',
+            'shareExpiresAt'  => 'nullable|date|after:now',
+        ], [
+            'shareExpiresAt.after' => 'Tanggal kedaluwarsa harus di masa mendatang.',
+        ]);
+
+        $user = auth()->user();
+
+        $modelClass = $this->shareItemType === 'file'
+            ? File::class
+            : Folder::class;
+
+        $model = $modelClass::findOrFail($this->shareItemId);
+
+        // Validasi ulang hak berbagi
+        if ($this->shareItemType === 'file') {
+            if (! ($model->uploaded_by === $user->id || $user->isSuperAdmin())) {
+                $this->dispatch('notify', type: 'error', message: 'Akses ditolak.');
+                return;
+            }
+        } else {
+            if (! ($model->created_by === $user->id || $user->isSuperAdmin())) {
+                $this->dispatch('notify', type: 'error', message: 'Akses ditolak.');
+                return;
+            }
+        }
+
+        // Hapus link lama jika ada
+        $model->sharedLinks()->delete();
+
+        // Buat link baru
+        $link = \App\Models\SharedLink::create([
+            'token'          => \App\Models\SharedLink::generateToken(),
+            'shareable_type' => $modelClass,
+            'shareable_id'   => $this->shareItemId,
+            'created_by'     => $user->id,
+            'permission'     => $this->sharePermission,
+            'expires_at'     => $this->shareExpiresAt ?: null,
+        ]);
+
+        $this->shareUrl    = $link->url();
+        $this->shareCopied = false;
+
+        $this->dispatch('notify', type: 'success', message: 'Link berbagi berhasil dibuat.');
+        $this->dispatch('share-link-created', url: $this->shareUrl);
+    }
+
+    public function revokeShareLink(): void
+    {
+        $user = auth()->user();
+
+        $modelClass = $this->shareItemType === 'file'
+            ? File::class
+            : Folder::class;
+
+        $model = $modelClass::findOrFail($this->shareItemId);
+
+        if ($this->shareItemType === 'file') {
+            if (! ($model->uploaded_by === $user->id || $user->isSuperAdmin())) {
+                $this->dispatch('notify', type: 'error', message: 'Akses ditolak.');
+                return;
+            }
+        } else {
+            if (! ($model->created_by === $user->id || $user->isSuperAdmin())) {
+                $this->dispatch('notify', type: 'error', message: 'Akses ditolak.');
+                return;
+            }
+        }
+
+        $model->sharedLinks()->delete();
+
+        $this->shareUrl    = null;
+        $this->shareCopied = false;
+
+        $this->dispatch('notify', type: 'success', message: 'Link berbagi berhasil dicabut.');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
     // INTERNAL HELPERS
     // ─────────────────────────────────────────────────────────────────────
 
@@ -569,65 +780,80 @@ class Explorer extends Component
             ->whereNull('deleted_at')
             ->withCount('children');
 
-        if (! $user->isAdmin()) {
-            // Ambil folder_id yang user punya akses aktif (belum expired)
-            $allowedIds = $user->folderPermissions()
-                ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
-                ->pluck('folder_id');
-
-            $query->whereIn('id', $allowedIds);
+        if ($user->isSuperAdmin()) {
+            return $query->orderBy('name')->get();
         }
+
+        $explicitIds = $user->activeFolderIds();
+
+        $query->where(function ($q) use ($user, $explicitIds) {
+            if ($user->kode_lamp) {
+                $q->where('kode_lamp', $user->kode_lamp);
+            }
+
+            if (! empty($explicitIds)) {
+                $q->orWhereIn('id', $explicitIds);
+            }
+        });
 
         return $query->orderBy('name')->get();
     }
 
-    /**
-     * Cek apakah user punya hak WRITE atau ADMIN pada folder ini.
-     *
-     * Logika: permission dicek dari folder itu sendiri dulu.
-     * Jika tidak ada, naik ke parent chain — karena sub-folder yang dibuat
-     * oleh user sendiri TIDAK otomatis punya permission record tersendiri,
-     * sehingga kita cukup periksa apakah ada permission write/admin di
-     * salah satu ancestor-nya.
-     *
-     * Admin (role = 'admin' atau isAdmin()) selalu boleh.
-     */
-    private function canWrite($user, Folder $folder): bool
+    private function canAccess($user, Folder $folder): bool
     {
-        // ── Admin selalu boleh ────────────────────────────────────────────
-        if (method_exists($user, 'isAdmin') && $user->isAdmin()) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
-        // Cek berdasarkan kolom role jika method isAdmin tidak ada / tidak cover
-        if (isset($user->role) && $user->role === 'admin') {
+        if ($user->kode_lamp && $folder->kode_lamp === $user->kode_lamp) {
             return true;
         }
 
-        // ── Cek permission dari folder ini naik ke atas ───────────────────
         $current = $folder;
-
         while ($current) {
             $perm = $user->folderPermissions()
                 ->where('folder_id', $current->id)
                 ->first();
 
-            if ($perm) {
-                // Cek apakah permission belum expired
-                $isActive = ! $perm->expires_at || ! $perm->expires_at->isPast();
-
-                if ($isActive && in_array($perm->permission, ['write', 'admin'])) {
-                    return true;
-                }
-
-                // Jika ada permission tapi hanya 'read' atau expired,
-                // jangan naik lebih tinggi — akses memang dibatasi di sini.
-                if ($isActive) {
-                    return false;
-                }
+            if ($perm && $perm->isActive()) {
+                return true;
             }
 
-            // Naik ke parent
+            $current = $current->parent_id
+                ? Folder::find($current->parent_id)
+                : null;
+        }
+
+        return false;
+    }
+
+    private function canWrite($user, Folder $folder): bool
+    {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if (! $user->canUpload()) {
+            return false;
+        }
+
+        if ($user->kode_lamp && $folder->kode_lamp === $user->kode_lamp) {
+            return true;
+        }
+
+        $current = $folder;
+        while ($current) {
+            $perm = $user->folderPermissions()
+                ->where('folder_id', $current->id)
+                ->first();
+
+            if ($perm && $perm->isActive()) {
+                if (in_array($perm->permission, ['write', 'admin'])) {
+                    return true;
+                }
+                return false;
+            }
+
             $current = $current->parent_id
                 ? Folder::find($current->parent_id)
                 : null;

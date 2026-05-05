@@ -14,16 +14,11 @@ class FolderPermission extends Model
         'folder_id',
         'permission',
         'expires_at',
-        // 'inherited_from' sengaja TIDAK dimasukkan fillable agar tidak pernah
-        // terisi secara tidak sengaja dari mass-assignment.
-        // Jika fitur inherit diaktifkan, tambahkan kembali di sini dan jalankan migration.
     ];
 
     protected $casts = [
         'expires_at' => 'datetime',
     ];
-
-    // ── Relations ─────────────────────────────────────────────────────────
 
     public function user(): BelongsTo
     {
@@ -34,8 +29,6 @@ class FolderPermission extends Model
     {
         return $this->belongsTo(Folder::class);
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────
 
     public function isExpired(): bool
     {

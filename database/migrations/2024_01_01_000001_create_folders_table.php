@@ -10,15 +10,25 @@ return new class extends Migration
     {
         Schema::create('folders', function (Blueprint $table) {
             $table->id();
+
             $table->string('name');
             $table->string('path');
-            $table->foreignId('parent_id')->nullable()->constrained('folders')->nullOnDelete();
-            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
+
+            $table->foreignId('parent_id')
+                ->nullable()
+                ->constrained('folders')
+                ->nullOnDelete();
+
+            $table->foreignId('created_by')
+                ->constrained('users')
+                ->cascadeOnDelete();
+
             $table->boolean('is_system')->default(false);
+
+            $table->string('kode_lamp')->nullable();
+
             $table->softDeletes();
             $table->timestamps();
-
-            $table->index(['parent_id', 'deleted_at']);
         });
     }
 

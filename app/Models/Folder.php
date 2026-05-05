@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+
 
 class Folder extends Model
 {
@@ -19,11 +21,22 @@ class Folder extends Model
         'path',
         'created_by',
         'is_system',
+        'kode_lamp',
+        'uuid',
     ];
 
     protected $casts = [
         'is_system' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Folder $folder) {
+            if (empty($folder->uuid)) {
+                $folder->uuid = (string) \Illuminate\Support\Str::uuid();
+            }
+        });
+    }
 
     // ── Relationships ─────────────────────────────────────────────────────
 
@@ -39,9 +52,6 @@ class Folder extends Model
             ->orderBy('name');
     }
 
-    /**
-     * Semua keturunan (rekursif) — eager load dengan nested children.
-     */
     public function childrenRecursive(): HasMany
     {
         return $this->children()->with('childrenRecursive');
@@ -66,10 +76,6 @@ class Folder extends Model
 
     // ── Helpers ───────────────────────────────────────────────────────────
 
-    /**
-     * Bangun path dari root ke folder ini.
-     * Contoh: "/Akreditasi/Dokumen Utama"
-     */
     public function buildPath(): string
     {
         $segments = [$this->name];
@@ -83,9 +89,6 @@ class Folder extends Model
         return '/' . implode('/', $segments);
     }
 
-    /**
-     * Kedalaman folder dari root (0 = root folder).
-     */
     public function depth(): int
     {
         $depth  = 0;
@@ -99,9 +102,6 @@ class Folder extends Model
         return $depth;
     }
 
-    /**
-     * Daftar semua ancestor (dari root ke parent langsung), untuk breadcrumb.
-     */
     public function ancestors(): array
     {
         $ancestors = [];
@@ -115,36 +115,18 @@ class Folder extends Model
         return $ancestors;
     }
 
-    // Tambahkan method berikut ke dalam class Folder yang sudah ada
+    // Tambahkan ke app/Models/Folder.php
 
-/**
- * Salin semua permission dari parent folder ke folder ini.
- * Dipanggil saat folder baru dibuat.
- * Jika sudah ada permission manual untuk user yang sama, skip.
- */
-public function inheritPermissionsFromParent(): void
+public function sharedLinks(): MorphMany
 {
-    if (! $this->parent_id) {
-        return; // root folder, tidak ada parent
-    }
+    return $this->morphMany(SharedLink::class, 'shareable');
+}
 
-    $parentPerms = FolderPermission::where('folder_id', $this->parent_id)->get();
-
-    foreach ($parentPerms as $parentPerm) {
-        // Cek apakah user sudah punya permission di folder ini
-        $exists = FolderPermission::where('folder_id', $this->id)
-            ->where('user_id', $parentPerm->user_id)
-            ->exists();
-
-        if (! $exists) {
-            FolderPermission::create([
-                'user_id'        => $parentPerm->user_id,
-                'folder_id'      => $this->id,
-                'permission'     => $parentPerm->permission,
-                'expires_at'     => $parentPerm->expires_at,
-                'inherited_from' => $parentPerm->id,
-            ]);
-        }
-    }
+public function activeSharedLink(): ?SharedLink
+{
+    return $this->sharedLinks()
+        ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+        ->latest()
+        ->first();
 }
 }
