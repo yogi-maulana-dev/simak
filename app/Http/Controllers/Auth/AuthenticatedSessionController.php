@@ -12,9 +12,6 @@ use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
 {
-    /**
-     * Display the login view.
-     */
     public function create(): View
     {
         $captcha = MathCaptcha::generate();
@@ -22,26 +19,41 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Handle an incoming authentication request.
+     * Handle login.
+     *
+     * Flow:
+     *   1. Validasi captcha + password (di LoginRequest::authenticate())
+     *   2. User sudah ter-Auth::login() di sini.
+     *   3. Cek apakah user punya 2FA aktif:
+     *      - Tidak → langsung lanjut ke dashboard.
+     *      - Ya → logout sementara, simpan ID di session, redirect ke challenge.
      */
     public function store(LoginRequest $request): RedirectResponse
     {
         $request->authenticate();
 
-        $request->session()->regenerate();
+        $user = Auth::user();
 
+        if ($user->hasTwoFactorEnabled()) {
+            // Logout sementara — user belum benar-benar masuk sampai OTP terverifikasi
+            Auth::logout();
+
+            $request->session()->put('2fa.user_id',  $user->id);
+            $request->session()->put('2fa.remember', $request->boolean('remember'));
+            $request->session()->put('2fa.expires',  now()->addMinutes(5)->timestamp);
+
+            return redirect()->route('two-factor.challenge');
+        }
+
+        // Tidak ada 2FA — lanjutkan login normal
+        $request->session()->regenerate();
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
-    /**
-     * Destroy an authenticated session.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         Auth::guard('web')->logout();
-
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
         return redirect('/');
