@@ -130,13 +130,13 @@ class NewsManager extends Component
             $n = News::findOrFail($this->editId);
             // Regenerate slug kalau judul berubah
             if ($n->title !== $this->title) {
-                $data['slug'] = News::makeUniqueSlug($this->title, $n->id);
+                $data['slug'] = News::uniqueSlug($this->title, $n->id);
             }
             $n->update($data);
             session()->flash('flash', 'Berita berhasil diperbarui.');
         } else {
             $data['author_id'] = auth()->id();
-            $data['slug']      = News::makeUniqueSlug($this->title);
+            $data['slug']      = News::uniqueSlug($this->title);
             News::create($data);
             session()->flash('flash', 'Berita berhasil ditambahkan.');
         }

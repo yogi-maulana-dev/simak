@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -16,11 +17,12 @@ class News extends Model
         'category',
         'thumbnail_path',
         'excerpt',
-        'body',
+        'content',
         'is_published',
         'is_featured',
         'views',
         'published_at',
+        'author_id',
     ];
 
     protected $casts = [
@@ -38,8 +40,8 @@ class News extends Model
             if (empty($model->slug)) {
                 $model->slug = static::uniqueSlug($model->title);
             }
-            if (empty($model->excerpt) && ! empty($model->body)) {
-                $model->excerpt = Str::limit(strip_tags($model->body), 200);
+            if (empty($model->excerpt) && ! empty($model->content)) {
+                $model->excerpt = Str::limit(strip_tags($model->content), 200);
             }
         });
 
@@ -47,8 +49,8 @@ class News extends Model
             if ($model->isDirty('title') && ! $model->isDirty('slug')) {
                 $model->slug = static::uniqueSlug($model->title, $model->id);
             }
-            if ($model->isDirty('body') && ! $model->isDirty('excerpt')) {
-                $model->excerpt = Str::limit(strip_tags($model->body), 200);
+            if ($model->isDirty('content') && ! $model->isDirty('excerpt')) {
+                $model->excerpt = Str::limit(strip_tags($model->content), 200);
             }
         });
     }
@@ -77,6 +79,11 @@ class News extends Model
             return Storage::disk('public')->url($this->thumbnail_path);
         }
         return asset('images/placeholder.jpg');
+    }
+
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'author_id');
     }
 
     public function scopePublished($query)
