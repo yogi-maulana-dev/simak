@@ -74,5 +74,11 @@ Route::get('/share/{token}',               [ShareController::class, 'show'])->na
 Route::get('/share/{token}/view/{fileId}', [ShareController::class, 'viewFile'])->name('share.view');
 Route::get('/share/{token}/stream/{fileId}', [ShareController::class, 'streamFile'])->name('share.stream');
 Route::get('/share/{token}/download/{fileId}', [ShareController::class, 'download'])->name('share.download');
+Route::get('/share/{token}/file/{fileId}/stream', [ShareController::class, 'streamFile'])
+    ->name('share.stream'); // <-- nama ini harus cocok dengan yang di blade
+
+    Route::get('/share/{token}/pdf/{fileId}', [ShareController::class, 'viewPdfViewer'])->name('share.pdf.viewer');
+Route::get('/share/{token}/pdf/{fileId}/data', [ShareController::class, 'streamPdfData'])->name('share.pdf.data');
+    
 
 require __DIR__.'/auth.php';

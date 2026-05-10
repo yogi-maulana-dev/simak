@@ -40,28 +40,51 @@ class File extends Model
         return $this->belongsTo(User::class, 'uploaded_by');
     }
 
+    public function sharedLinks(): MorphMany
+    {
+        return $this->morphMany(SharedLink::class, 'shareable');
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────
 
+    /**
+     * Path relatif di dalam disk (misal: documents/nama_file.pdf)
+     */
     public function storagePath(): string
     {
+        if (empty($this->stored_name)) {
+            return '';
+        }
         return 'documents/' . $this->stored_name;
     }
 
+    /**
+     * URL publik file (jika disk = public dan symlink terpasang)
+     */
     public function url(): string
     {
-        return Storage::disk($this->disk)->url($this->storagePath());
+        if (empty($this->stored_name)) {
+            return '';
+        }
+        return Storage::disk($this->disk ?? 'public')->url($this->storagePath());
     }
 
+    /**
+     * Ekstensi file (lowercase)
+     */
     public function extension(): string
     {
         return strtolower(pathinfo($this->original_name, PATHINFO_EXTENSION));
     }
 
+    /**
+     * Format ukuran file
+     */
     public function formattedSize(): string
     {
         $bytes = $this->size;
         $units = ['B', 'KB', 'MB', 'GB'];
-        $i     = 0;
+        $i = 0;
 
         while ($bytes >= 1024 && $i < 3) {
             $bytes /= 1024;
@@ -71,6 +94,9 @@ class File extends Model
         return round($bytes, 1) . ' ' . $units[$i];
     }
 
+    /**
+     * Ikon kelas untuk tampilan
+     */
     public function iconClass(): string
     {
         return match ($this->extension()) {
@@ -82,20 +108,36 @@ class File extends Model
         };
     }
 
-    // Tambahkan ke app/Models/File.php
+    /**
+     * Cek apakah file fisik benar-benar ada di storage
+     */
+    public function fileExists(): bool
+    {
+        if (empty($this->stored_name)) {
+            return false;
+        }
+        return Storage::disk($this->disk ?? 'public')->exists($this->storagePath());
+    }
+
+    /**
+     * Hapus record file jika fisiknya tidak ada (opsional)
+     */
+    public function deleteIfMissing(): bool
+    {
+        if (!$this->fileExists()) {
+            $this->forceDelete();
+            return true;
+        }
+        return false;
+    }
 
 
-public function sharedLinks(): MorphMany
-{
-    return $this->morphMany(SharedLink::class, 'shareable');
-}
 
-public function activeSharedLink(): ?SharedLink
+    public function activeSharedLink(): ?SharedLink
 {
     return $this->sharedLinks()
         ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
         ->latest()
         ->first();
 }
-
 }

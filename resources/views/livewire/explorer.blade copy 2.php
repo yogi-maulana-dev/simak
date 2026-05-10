@@ -57,14 +57,14 @@
                         <p class="text-center text-sm text-gray-400 py-6 italic">Belum ada folder</p>
                     @else
                         <ul class="space-y-0.5">
-                       @foreach ($this->rootFolders as $rootFolder)
-    @include('livewire.partials.folder-tree-node', [
-        'folder'      => $rootFolder,   // <-- key = folder, value = $rootFolder
-        'depth'       => 0,
-        'currentId'   => $currentFolderId,
-        'expandedIds' => $expandedIds
-    ])
-@endforeach
+                            @foreach ($this->rootFolders as $rootFolder)
+                                @include('livewire.partials.folder-tree-node', [
+                                    'folder' => $rootFolder,
+                                    'depth' => 0,
+                                    'currentId' => $currentFolderId,
+                                    'expandedIds' => $expandedIds
+                                ])
+                            @endforeach
                         </ul>
                     @endif
                 </div>
@@ -376,51 +376,20 @@
     @endif
 
     {{-- MODAL: Share (sederhana) --}}
-@if ($showShareModal)
-<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" wire:keydown.window.escape="$set('showShareModal', false)">
-    <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl" x-on:click.outside="$wire.set('showShareModal', false)">
-        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Bagikan {{ $shareItemType === 'folder' ? 'Folder' : 'File' }}</h3>
-            <button wire:click="$set('showShareModal', false)" class="text-gray-400 hover:text-gray-600">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-        </div>
-        <div class="p-6 space-y-4">
-            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">{{ $shareItemName }}</p>
-
-            @if ($shareUrl)
-            <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 flex flex-col gap-2">
-                <code class="text-xs break-all text-gray-600 dark:text-gray-300">{{ $shareUrl }}</code>
-                <div class="flex gap-2">
-                    <button onclick="navigator.clipboard.writeText('{{ $shareUrl }}')" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium py-1 rounded">Salin Link</button>
-                    <button wire:click="revokeShareLink" class="flex-1 bg-red-500 hover:bg-red-600 text-white text-xs font-medium py-1 rounded">Cabut Akses</button>
-                </div>
-            </div>
-            @endif
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Izin Akses</label>
-                <select wire:model="sharePermission" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-900">
-                    <option value="view">Lihat saja (tidak bisa download)</option>
-                    <option value="download">Lihat & download</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kedaluwarsa (opsional)</label>
-                <input type="datetime-local" wire:model="shareExpiresAt" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-900">
-                <p class="text-xs text-gray-400 mt-1">Kosongkan untuk link permanen</p>
-            </div>
-            <div class="flex gap-3 pt-2">
-                <button wire:click="createShareLink" wire:loading.attr="disabled" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 rounded-lg transition">
-                    <span wire:loading.remove wire:target="createShareLink">Buat Link</span>
-                    <span wire:loading wire:target="createShareLink">Memproses...</span>
-                </button>
-                <button wire:click="$set('showShareModal', false)" class="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium py-2 rounded-lg transition">Tutup</button>
+    @if ($showShareModal)
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" wire:keydown.window.escape="$set('showShareModal', false)">
+        <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl" x-on:click.outside="$wire.set('showShareModal', false)">
+            <div class="px-6 py-4 border-b flex justify-between"><h3 class="text-lg font-semibold">Bagikan {{ $shareItemType === 'folder' ? 'Folder' : 'File' }}</h3><button wire:click="$set('showShareModal', false)">✕</button></div>
+            <div class="p-6 space-y-4">
+                <p class="text-sm font-medium truncate">{{ $shareItemName }}</p>
+                @if ($shareUrl)<div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 flex justify-between items-center"><code class="text-xs break-all">{{ $shareUrl }}</code><button wire:click="revokeShareLink" class="text-red-500 text-xs">Cabut</button></div>@endif
+                <div><label class="block text-sm font-medium">Izin</label><select wire:model="sharePermission" class="w-full border rounded-lg px-3 py-2"><option value="view">Lihat saja</option><option value="download">Lihat & Unduh</option></select></div>
+                <div><label class="block text-sm font-medium">Kedaluwarsa (opsional)</label><input type="datetime-local" wire:model="shareExpiresAt" class="w-full border rounded-lg px-3 py-2"></div>
+                <div class="flex gap-3"><button wire:click="createShareLink" class="flex-1 bg-purple-600 text-white py-2 rounded-lg">Buat Link</button><button wire:click="$set('showShareModal', false)" class="flex-1 bg-gray-100 dark:bg-gray-700 py-2 rounded-lg">Tutup</button></div>
             </div>
         </div>
     </div>
-</div>
-@endif
+    @endif
 
     {{-- ===================== STYLE & SCRIPT ===================== --}}
     <style>
@@ -458,80 +427,69 @@
         }
     </style>
 
-   <script>
-    (function() {
-        const sidebar = document.getElementById('explorer-sidebar');
-        const backdrop = document.getElementById('explorer-backdrop');
-        const toggleBtn = document.getElementById('explorer-toggle-btn');
-        const closeBtn = document.getElementById('explorer-close-btn');
+    <script>
+        (function() {
+            const sidebar = document.getElementById('explorer-sidebar');
+            const backdrop = document.getElementById('explorer-backdrop');
+            const toggleBtn = document.getElementById('explorer-toggle-btn');
+            const closeBtn = document.getElementById('explorer-close-btn');
 
-        function openSidebar() {
-            if (sidebar) sidebar.classList.add('is-open');
-            if (backdrop) backdrop.classList.add('is-open');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeSidebar() {
-            if (sidebar) sidebar.classList.remove('is-open');
-            if (backdrop) backdrop.classList.remove('is-open');
-            document.body.style.overflow = '';
-        }
-
-        function toggleSidebar() {
-            if (sidebar && sidebar.classList.contains('is-open')) {
-                closeSidebar();
-            } else {
-                openSidebar();
+            function openSidebar() {
+                if (sidebar) sidebar.classList.add('is-open');
+                if (backdrop) backdrop.classList.add('is-open');
+                document.body.style.overflow = 'hidden';
             }
-        }
-
-        if (toggleBtn) toggleBtn.addEventListener('click', toggleSidebar);
-        if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
-
-        // Backdrop hanya menutup saat klik LANGSUNG pada elemen backdrop itu sendiri,
-        // bukan event yang bubble dari dalam sidebar
-        if (backdrop) {
-            backdrop.addEventListener('click', function(e) {
-                if (e.target === backdrop) {
-                    closeSidebar();
-                }
-            });
-        }
-
-        // Semua klik di dalam sidebar TIDAK boleh bubble ke luar (ke backdrop/document)
-        if (sidebar) {
-            sidebar.addEventListener('click', function(e) {
-                e.stopPropagation();
-            });
-        }
-
-        // Reset saat resize ke desktop
-        window.addEventListener('resize', function() {
-            if (window.innerWidth >= 1024) {
+            function closeSidebar() {
                 if (sidebar) sidebar.classList.remove('is-open');
                 if (backdrop) backdrop.classList.remove('is-open');
                 document.body.style.overflow = '';
             }
-        });
-    })();
+            function toggleSidebar() {
+                if (sidebar && sidebar.classList.contains('is-open')) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            }
 
-    function toastHandler() {
-        return {
-            toasts: [],
-            initToastListener() {
-                window.addEventListener('notify', (e) => {
-                    this.addToast(e.detail.type, e.detail.message);
+            if (toggleBtn) toggleBtn.addEventListener('click', toggleSidebar);
+            if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+            if (backdrop) backdrop.addEventListener('click', closeSidebar);
+
+            // KRUSIAL: Cegah klik di dalam sidebar menutup sidebar
+            if (sidebar) {
+                sidebar.addEventListener('click', function(e) {
+                    e.stopPropagation();
                 });
-            },
-            addToast(type, message) {
-                const id = Date.now();
-                this.toasts.push({ id, type, message });
-                setTimeout(() => this.removeToast(id), 4000);
-            },
-            removeToast(id) {
-                this.toasts = this.toasts.filter(t => t.id !== id);
+            }
+
+            // Reset saat resize ke desktop
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 1024) {
+                    if (sidebar) sidebar.classList.remove('is-open');
+                    if (backdrop) backdrop.classList.remove('is-open');
+                    document.body.style.overflow = '';
+                }
+            });
+        })();
+
+        function toastHandler() {
+            return {
+                toasts: [],
+                initToastListener() {
+                    window.addEventListener('notify', (e) => {
+                        this.addToast(e.detail.type, e.detail.message);
+                    });
+                },
+                addToast(type, message) {
+                    const id = Date.now();
+                    this.toasts.push({ id, type, message });
+                    setTimeout(() => this.removeToast(id), 4000);
+                },
+                removeToast(id) {
+                    this.toasts = this.toasts.filter(t => t.id !== id);
+                }
             }
         }
-    }
-</script>
+    </script>
 </div>

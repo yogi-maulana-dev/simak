@@ -22,6 +22,9 @@ class FolderPermissionManager extends Component
     public string  $permission     = 'read';
     public ?string $expiresAt      = null;
 
+    // Loading state untuk tombol
+    public bool $isProcessing = false;
+
     public function mount(): void
     {
         abort_unless(auth()->user()->isSuperAdmin(), 403);
@@ -71,47 +74,71 @@ class FolderPermissionManager extends Component
     public function selectFolder(int $folderId): void
     {
         $this->activeFolderId = $folderId;
-        $this->reset(['selectedUserId', 'permission', 'expiresAt']);
+        $this->reset(['selectedUserId', 'permission', 'expiresAt', 'isProcessing']);
+        // Hapus cache computed properties
         unset($this->activeFolder, $this->folderPermissions);
+        $this->dispatch('$refresh');
     }
 
     public function grantPermission(): void
     {
+        $this->isProcessing = true;
+
         $this->validate([
             'selectedUserId' => 'required|exists:users,id',
             'permission'     => 'required|in:read,write,admin',
             'expiresAt'      => 'nullable|date|after:now',
         ]);
 
-        FolderPermission::updateOrCreate(
-            [
-                'folder_id' => $this->activeFolderId,
-                'user_id'   => $this->selectedUserId,
-            ],
-            [
-                'permission' => $this->permission,
-                'expires_at' => $this->expiresAt ?: null,
-            ]
-        );
+        try {
+            FolderPermission::updateOrCreate(
+                [
+                    'folder_id' => $this->activeFolderId,
+                    'user_id'   => $this->selectedUserId,
+                ],
+                [
+                    'permission' => $this->permission,
+                    'expires_at' => $this->expiresAt ?: null,
+                ]
+            );
 
-        $this->reset(['selectedUserId', 'permission', 'expiresAt']);
-        unset($this->folderPermissions);
+            $this->reset(['selectedUserId', 'permission', 'expiresAt']);
+            // Hapus cache computed properties agar di-refresh
+            unset($this->folderPermissions);
 
-        $this->dispatch('notify', type: 'success', message: 'Akses berhasil diberikan.');
+            $this->dispatch('notify', type: 'success', message: 'Akses berhasil diberikan.');
+            $this->dispatch('$refresh');
+        } catch (\Exception $e) {
+            $this->dispatch('notify', type: 'error', message: 'Gagal memberikan akses: ' . $e->getMessage());
+        } finally {
+            $this->isProcessing = false;
+        }
     }
 
     public function revokePermission(int $permissionId): void
     {
-        FolderPermission::findOrFail($permissionId)->delete();
-        unset($this->folderPermissions);
+        $this->isProcessing = true;
 
-        $this->dispatch('notify', type: 'success', message: 'Akses berhasil dicabut.');
+        try {
+            $permission = FolderPermission::findOrFail($permissionId);
+            $permission->delete();
+            // Hapus cache computed properties
+            unset($this->folderPermissions);
+
+            $this->dispatch('notify', type: 'success', message: 'Akses berhasil dicabut.');
+            $this->dispatch('$refresh');
+        } catch (\Exception $e) {
+            $this->dispatch('notify', type: 'error', message: 'Gagal mencabut akses: ' . $e->getMessage());
+        } finally {
+            $this->isProcessing = false;
+        }
     }
 
     public function updatedSearch(): void
     {
         unset($this->folders);
         $this->activeFolderId = null;
+        $this->reset(['selectedUserId', 'permission', 'expiresAt']);
     }
 
     public function render()

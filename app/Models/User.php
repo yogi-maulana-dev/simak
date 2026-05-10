@@ -59,9 +59,9 @@ class User extends Authenticatable
 
     // ── Role Checks ───────────────────────────────────────────────────────
 
-    public function isSuperAdmin(): bool
+   public function isSuperAdmin(): bool
     {
-        return $this->role === 'super_admin';
+        return $this->role === 'super_admin' || $this->is_super_admin === true;
     }
 
     public function isAdminProdi(): bool

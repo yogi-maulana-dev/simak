@@ -115,52 +115,23 @@ class Folder extends Model
 public function hasWriteAccess(int $userId): bool
 {
     $user = User::find($userId);
-    if ($user && $user->isSuperAdmin()) return true;
-    if ($this->created_by === $userId) return true;
-    
-    $perm = $this->permissions()
+    // Superadmin selalu punya akses
+    if ($user && $user->isSuperAdmin()) {
+        return true;
+    }
+    // Pemilik folder
+    if ($this->created_by === $userId) {
+        return true;
+    }
+    // Cek permission di tabel folder_permissions
+    $permission = $this->permissions()
         ->where('user_id', $userId)
-        ->whereIn('permission', ['write', 'admin']) // ← tambahkan 'admin'
+        ->whereIn('permission', ['write', 'manage']) // 'write' atau 'manage'
         ->where(function ($q) {
             $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
         })
         ->first();
     
-    return !is_null($perm);
+    return !is_null($permission);
 }
-
-/**
- * Ambil link berbagi aktif (belum expired)
- */
-public function activeSharedLink(): ?SharedLink
-{
-    return $this->sharedLinks()
-        ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
-        ->latest()
-        ->first();
-}
-
-/**
- * Cek apakah folder ini adalah turunan dari folder lain.
- */
-public function isDescendantOf(Folder $ancestor): bool
-{
-    $current = $this;
-    while ($current->parent_id) {
-        if ($current->parent_id === $ancestor->id) {
-            return true;
-        }
-        $current = $current->parent;
-    }
-    return false;
-}
-
-/**
- * Cek apakah folder ini adalah leluhur dari folder lain.
- */
-public function isAncestorOf(Folder $descendant): bool
-{
-    return $descendant->isDescendantOf($this);
-}
-
 }

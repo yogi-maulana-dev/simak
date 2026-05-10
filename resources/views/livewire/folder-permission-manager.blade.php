@@ -1,35 +1,23 @@
-{{-- resources/views/livewire/folder-permission-manager.blade.php --}}
 <div class="max-w-6xl mx-auto px-4 py-6 space-y-6">
 
-    {{-- Toast --}}
-    <div
-        x-data="{
-            toasts: [],
-            add(e) {
-                const id = Date.now();
-                this.toasts.push({ id, type: e.detail.type, message: e.detail.message });
-                setTimeout(() => this.remove(id), 3500);
-            },
-            remove(id) { this.toasts = this.toasts.filter(t => t.id !== id); }
-        }"
-        @notify.window="add($event)"
-        class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"
-        style="min-width:280px"
-    >
+    {{-- Toast notification --}}
+    <div x-data="toastHandler()" x-init="initToastListener()"
+         class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"
+         style="min-width:280px">
         <template x-for="toast in toasts" :key="toast.id">
-            <div
-                x-transition:enter="transition ease-out duration-200"
-                x-transition:enter-start="opacity-0 translate-x-4"
-                x-transition:enter-end="opacity-100 translate-x-0"
-                :class="{
-                    'bg-green-50 border-green-300 text-green-800': toast.type==='success',
-                    'bg-red-50 border-red-300 text-red-800': toast.type==='error',
-                    'bg-yellow-50 border-yellow-300 text-yellow-800': toast.type==='warning',
-                }"
-                class="flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-lg text-sm font-medium pointer-events-auto"
-            >
+            <div x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 translate-x-4"
+                 x-transition:enter-end="opacity-100 translate-x-0"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-end="opacity-0 translate-x-4"
+                 :class="{
+                     'bg-green-50 border-green-300 text-green-800': toast.type === 'success',
+                     'bg-red-50 border-red-300 text-red-800': toast.type === 'error',
+                     'bg-yellow-50 border-yellow-300 text-yellow-800': toast.type === 'warning',
+                 }"
+                 class="flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-lg text-sm font-medium pointer-events-auto">
                 <span x-text="toast.message" class="flex-1"></span>
-                <button @click="remove(toast.id)" class="opacity-60 hover:opacity-100">✕</button>
+                <button @click="removeToast(toast.id)" class="opacity-60 hover:opacity-100">✕</button>
             </div>
         </template>
     </div>
@@ -72,9 +60,10 @@
 
             <ul class="divide-y divide-gray-100 dark:divide-gray-700 max-h-96 overflow-y-auto">
                 @forelse ($this->folders as $folder)
-                    <li>
+                    <li wire:key="folder-{{ $folder->id }}">
                         <button
                             wire:click="selectFolder({{ $folder->id }})"
+                            wire:loading.attr="disabled"
                             @class([
                                 'w-full flex items-start gap-3 px-4 py-3 text-left transition-colors',
                                 'bg-blue-50 dark:bg-blue-900/20 border-l-2 border-blue-500' => $activeFolderId === $folder->id,
@@ -105,16 +94,14 @@
 
         {{-- Kolom kanan: Kelola Permission --}}
         <div class="space-y-4">
-
             @if (! $activeFolderId)
                 <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 flex flex-col items-center justify-center text-center gap-3">
                     <svg class="w-12 h-12 text-gray-200 dark:text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8 11V7a5 5 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
                     </svg>
                     <p class="text-sm text-gray-400">Pilih folder dari kiri untuk mengatur akses.</p>
                 </div>
             @else
-
                 {{-- Info folder aktif --}}
                 <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-3 flex items-center gap-3">
                     <svg class="w-5 h-5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -169,13 +156,16 @@
 
                     <button
                         wire:click="grantPermission"
-                        class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                        wire:loading.attr="disabled"
+                        wire:target="grantPermission"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         <svg wire:loading wire:target="grantPermission" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
                         </svg>
-                        Simpan Akses
+                        <span wire:loading.remove wire:target="grantPermission">Simpan Akses</span>
+                        <span wire:loading wire:target="grantPermission">Memproses...</span>
                     </button>
                 </div>
 
@@ -195,7 +185,7 @@
                     @else
                         <ul class="divide-y divide-gray-100 dark:divide-gray-700">
                             @foreach ($this->folderPermissions as $perm)
-                                <li class="flex items-center gap-3 px-4 py-3">
+                                <li wire:key="perm-{{ $perm->id }}" class="flex items-center gap-3 px-4 py-3">
                                     <div class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
                                         <span class="text-xs font-bold text-gray-500 dark:text-gray-400">
                                             {{ strtoupper(substr($perm->user->name, 0, 1)) }}
@@ -205,7 +195,7 @@
                                         <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                                             {{ $perm->user->name }}
                                         </p>
-                                        <div class="flex items-center gap-2 mt-0.5">
+                                        <div class="flex items-center gap-2 mt-0.5 flex-wrap">
                                             <span @class([
                                                 'px-1.5 py-0.5 rounded text-[10px] font-semibold',
                                                 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' => $perm->permission === 'admin',
@@ -217,10 +207,10 @@
                                             @if ($perm->expires_at)
                                                 <span @class([
                                                     'text-[10px]',
-                                                    'text-red-500' => $perm->isExpired(),
-                                                    'text-gray-400' => ! $perm->isExpired(),
+                                                    'text-red-500' => $perm->expires_at->isPast(),
+                                                    'text-gray-400' => !$perm->expires_at->isPast(),
                                                 ])>
-                                                    {{ $perm->isExpired() ? 'Kedaluwarsa' : 'Sampai' }}
+                                                    {{ $perm->expires_at->isPast() ? 'Kedaluwarsa' : 'Sampai' }}
                                                     {{ $perm->expires_at->format('d M Y') }}
                                                 </span>
                                             @else
@@ -231,7 +221,9 @@
                                     <button
                                         wire:click="revokePermission({{ $perm->id }})"
                                         wire:confirm="Cabut akses {{ $perm->user->name }}?"
-                                        class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                        wire:loading.attr="disabled"
+                                        wire:target="revokePermission({{ $perm->id }})"
+                                        class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50"
                                         title="Cabut akses"
                                     >
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -243,8 +235,28 @@
                         </ul>
                     @endif
                 </div>
-
             @endif
         </div>
     </div>
 </div>
+
+<script>
+    function toastHandler() {
+        return {
+            toasts: [],
+            initToastListener() {
+                window.addEventListener('notify', (e) => {
+                    this.addToast(e.detail.type, e.detail.message);
+                });
+            },
+            addToast(type, message) {
+                const id = Date.now();
+                this.toasts.push({ id, type, message });
+                setTimeout(() => this.removeToast(id), 4000);
+            },
+            removeToast(id) {
+                this.toasts = this.toasts.filter(t => t.id !== id);
+            }
+        }
+    }
+</script>
