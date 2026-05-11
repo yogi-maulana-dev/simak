@@ -1,4 +1,4 @@
-<div class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+<div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
     {{-- Toast notification --}}
     <div x-data="toastHandler()" x-init="initToastListener()"
@@ -40,7 +40,7 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        {{-- Kolom kiri: Daftar Folder --}}
+        {{-- Kolom kiri: Daftar Folder (flat) --}}
         <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                 <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Pilih Folder</h2>
@@ -49,21 +49,15 @@
                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
                     </svg>
-                    <input
-                        type="text"
-                        wire:model.live.debounce.300ms="search"
-                        placeholder="Cari folder..."
-                        class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-lg text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
+                    <input type="text" wire:model.live.debounce.300ms="search"
+                           placeholder="Cari folder..."
+                           class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-lg">
                 </div>
             </div>
-
             <ul class="divide-y divide-gray-100 dark:divide-gray-700 max-h-96 overflow-y-auto">
-                @forelse ($this->folders as $folder)
+                @forelse ($this->foldersFlat as $folder)
                     <li wire:key="folder-{{ $folder->id }}">
-                        <button
-                            wire:click="selectFolder({{ $folder->id }})"
-                            wire:loading.attr="disabled"
+                        <button wire:click="selectFolder({{ $folder->id }})" wire:loading.attr="disabled"
                             @class([
                                 'w-full flex items-start gap-3 px-4 py-3 text-left transition-colors',
                                 'bg-blue-50 dark:bg-blue-900/20 border-l-2 border-blue-500' => $activeFolderId === $folder->id,
@@ -77,165 +71,165 @@
                                 <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{ $folder->name }}</p>
                                 <p class="text-xs text-gray-400 mt-0.5 truncate">{{ $folder->buildPath() }}</p>
                                 @if ($folder->kode_lamp)
-                                    <span class="inline-block mt-1 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-[10px] font-mono">
-                                        {{ $folder->kode_lamp }}
-                                    </span>
+                                    <span class="inline-block mt-1 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 text-[10px] font-mono">{{ $folder->kode_lamp }}</span>
                                 @endif
                             </div>
                         </button>
                     </li>
                 @empty
-                    <li class="px-4 py-8 text-center text-sm text-gray-400">
-                        Tidak ada folder ditemukan.
-                    </li>
+                    <li class="px-4 py-8 text-center text-sm text-gray-400">Tidak ada folder ditemukan.</li>
                 @endforelse
             </ul>
         </div>
 
         {{-- Kolom kanan: Kelola Permission --}}
         <div class="space-y-4">
-            @if (! $activeFolderId)
-                <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 flex flex-col items-center justify-center text-center gap-3">
-                    <svg class="w-12 h-12 text-gray-200 dark:text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            @if(!$activeFolderId)
+                <div class="bg-white dark:bg-gray-800 rounded-2xl border p-8 flex flex-col items-center text-center gap-3">
+                    <svg class="w-12 h-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8 11V7a5 5 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
                     </svg>
                     <p class="text-sm text-gray-400">Pilih folder dari kiri untuk mengatur akses.</p>
                 </div>
             @else
                 {{-- Info folder aktif --}}
-                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-3 flex items-center gap-3">
-                    <svg class="w-5 h-5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 rounded-xl px-4 py-3 flex items-center gap-3">
+                    <svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/>
                     </svg>
                     <div>
-                        <p class="text-sm font-semibold text-blue-800 dark:text-blue-300">{{ $this->activeFolder?->name }}</p>
-                        <p class="text-xs text-blue-500 dark:text-blue-400">{{ $this->activeFolder?->buildPath() }}</p>
+                        <p class="text-sm font-semibold text-blue-800">{{ $this->activeFolder?->name }}</p>
+                        <p class="text-xs text-blue-500">{{ $this->activeFolder?->buildPath() }}</p>
                     </div>
                 </div>
 
-                {{-- Form beri akses --}}
-                <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
-                    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Beri Akses User</h3>
-
+                {{-- Single assign --}}
+                <div class="bg-white dark:bg-gray-800 rounded-2xl border p-4 space-y-3">
+                    <h3 class="text-sm font-semibold text-gray-700">Beri Akses User (Folder ini)</h3>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">User</label>
-                        <select wire:model="selectedUserId"
-                                class="w-full text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">User</label>
+                        <select wire:model="selectedUserId" class="w-full text-sm border rounded-lg px-3 py-2">
                             <option value="">-- Pilih user --</option>
                             @foreach ($this->users as $u)
-                                <option value="{{ $u->id }}">
-                                    {{ $u->name }}
-                                    @if ($u->prodi) ({{ $u->prodi }}) @endif
-                                    · {{ $u->roleBadge() }}
-                                </option>
+                                <option value="{{ $u->id }}">{{ $u->name }} @if($u->prodi) ({{ $u->prodi }}) @endif · {{ $u->roleBadge() }}</option>
                             @endforeach
                         </select>
-                        @error('selectedUserId')
-                            <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                        @enderror
+                        @error('selectedUserId') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                     </div>
-
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Level Akses</label>
-                            <select wire:model="permission"
-                                    class="w-full text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="read">Read — Hanya lihat</option>
-                                <option value="write">Write — Lihat & upload</option>
-                                <option value="admin">Admin — Semua aksi</option>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Level</label>
+                            <select wire:model="permission" class="w-full text-sm border rounded-lg px-3 py-2">
+                                <option value="read">Read</option>
+                                <option value="write">Write</option>
+                                <option value="admin">Admin</option>
                             </select>
                         </div>
-
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Berlaku Sampai</label>
-                            <input type="datetime-local" wire:model="expiresAt"
-                                   class="w-full text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Berlaku Sampai</label>
+                            <input type="datetime-local" wire:model="expiresAt" class="w-full text-sm border rounded-lg px-3 py-2">
                             <p class="mt-0.5 text-[10px] text-gray-400">Kosong = permanen</p>
                         </div>
                     </div>
-
-                    <button
-                        wire:click="grantPermission"
-                        wire:loading.attr="disabled"
-                        wire:target="grantPermission"
-                        class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
+                    <button wire:click="grantPermission" wire:loading.attr="disabled" wire:target="grantPermission"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50">
                         <svg wire:loading wire:target="grantPermission" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
                         </svg>
-                        <span wire:loading.remove wire:target="grantPermission">Simpan Akses</span>
-                        <span wire:loading wire:target="grantPermission">Memproses...</span>
+                        <span>Simpan Akses</span>
                     </button>
                 </div>
 
-                {{-- Daftar permission yang sudah ada --}}
-                <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                            Akses Aktif
-                            <span class="ml-1.5 px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs">
-                                {{ $this->folderPermissions->count() }}
-                            </span>
-                        </h3>
+                {{-- Daftar akses aktif folder ini --}}
+                <div class="bg-white dark:bg-gray-800 rounded-2xl border overflow-hidden">
+                    <div class="px-4 py-3 border-b">
+                        <h3 class="text-sm font-semibold">Akses Aktif <span class="ml-1 px-1.5 py-0.5 rounded-full bg-gray-100 text-xs">{{ $this->folderPermissions->count() }}</span></h3>
                     </div>
-
-                    @if ($this->folderPermissions->isEmpty())
-                        <p class="px-4 py-6 text-center text-sm text-gray-400">Belum ada akses yang diberikan.</p>
+                    @if($this->folderPermissions->isEmpty())
+                        <p class="px-4 py-6 text-center text-sm text-gray-400">Belum ada akses.</p>
                     @else
-                        <ul class="divide-y divide-gray-100 dark:divide-gray-700">
-                            @foreach ($this->folderPermissions as $perm)
-                                <li wire:key="perm-{{ $perm->id }}" class="flex items-center gap-3 px-4 py-3">
-                                    <div class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                                        <span class="text-xs font-bold text-gray-500 dark:text-gray-400">
-                                            {{ strtoupper(substr($perm->user->name, 0, 1)) }}
-                                        </span>
+                        <ul class="divide-y">
+                            @foreach($this->folderPermissions as $perm)
+                                <li class="flex items-center gap-3 px-4 py-3">
+                                    <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                                        <span class="text-xs font-bold">{{ strtoupper(substr($perm->user->name,0,1)) }}</span>
                                     </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                                            {{ $perm->user->name }}
-                                        </p>
-                                        <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-                                            <span @class([
-                                                'px-1.5 py-0.5 rounded text-[10px] font-semibold',
-                                                'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' => $perm->permission === 'admin',
-                                                'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' => $perm->permission === 'write',
-                                                'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400' => $perm->permission === 'read',
-                                            ])>
-                                                {{ strtoupper($perm->permission) }}
-                                            </span>
-                                            @if ($perm->expires_at)
-                                                <span @class([
-                                                    'text-[10px]',
-                                                    'text-red-500' => $perm->expires_at->isPast(),
-                                                    'text-gray-400' => !$perm->expires_at->isPast(),
-                                                ])>
-                                                    {{ $perm->expires_at->isPast() ? 'Kedaluwarsa' : 'Sampai' }}
-                                                    {{ $perm->expires_at->format('d M Y') }}
-                                                </span>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-medium">{{ $perm->user->name }}</p>
+                                        <div class="flex gap-2 mt-0.5">
+                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold @if($perm->permission=='admin') bg-green-100 text-green-700 @elseif($perm->permission=='write') bg-blue-100 text-blue-700 @else bg-gray-100 @endif">{{ strtoupper($perm->permission) }}</span>
+                                            @if($perm->expires_at)
+                                                <span class="text-[10px] {{ $perm->expires_at->isPast() ? 'text-red-500' : 'text-gray-400' }}">{{ $perm->expires_at->isPast() ? 'Kedaluwarsa' : 'Sampai' }} {{ $perm->expires_at->format('d M Y') }}</span>
                                             @else
                                                 <span class="text-[10px] text-gray-400">Permanen</span>
                                             @endif
                                         </div>
                                     </div>
-                                    <button
-                                        wire:click="revokePermission({{ $perm->id }})"
-                                        wire:confirm="Cabut akses {{ $perm->user->name }}?"
-                                        wire:loading.attr="disabled"
-                                        wire:target="revokePermission({{ $perm->id }})"
-                                        class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50"
-                                        title="Cabut akses"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                        </svg>
-                                    </button>
+                                    <button wire:click="revokePermission({{ $perm->id }})" wire:confirm="Cabut akses?" class="p-1.5 text-gray-400 hover:text-red-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
                                 </li>
                             @endforeach
                         </ul>
                     @endif
                 </div>
             @endif
+
+            {{-- BULK ASSIGN (Pilih user dulu, lalu centang folder) --}}
+            <div class="bg-white dark:bg-gray-800 rounded-2xl border p-4 space-y-3">
+                <h3 class="text-sm font-semibold flex items-center gap-2">🎯 Beri Akses Massal (centang folder)</h3>
+                <div>
+                    <label class="block text-xs font-medium mb-1">Pilih User</label>
+                    <select wire:model.live="bulkUserId" class="w-full text-sm border rounded-lg px-3 py-2">
+                        <option value="">-- Pilih user --</option>
+                        @foreach($this->users as $u)
+                            <option value="{{ $u->id }}">{{ $u->name }} ({{ $u->prodi ?? 'Tanpa Prodi' }})</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                @if($bulkUserId)
+                    <div>
+                        <label class="block text-xs font-medium mb-1">Cari Folder</label>
+                        <input type="text" wire:model.live.debounce.300ms="bulkFolderSearch" placeholder="Ketik nama folder..." class="w-full text-sm border rounded-lg px-3 py-1.5 bg-gray-50">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium mb-1">Level Akses untuk folder dicentang</label>
+                        <select wire:model="bulkPermission" class="w-full text-sm border rounded-lg px-3 py-2">
+                            <option value="read">Read – Hanya lihat</option>
+                            <option value="write">Write – Lihat & upload</option>
+                            <option value="admin">Admin – Semua aksi</option>
+                        </select>
+                        <p class="text-[10px] text-gray-400 mt-1">* Jika user sudah punya akses lebih tinggi, tidak diturunkan.</p>
+                    </div>
+
+                    <div class="border rounded-lg p-3 max-h-96 overflow-y-auto">
+                        <div class="flex justify-between items-center mb-2 pb-2 border-b">
+                            <span class="text-xs text-gray-500">Tree folder</span>
+                            <div class="flex gap-2">
+                                <button type="button" wire:click="checkAllVisible" class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded">Centang Semua</button>
+                                <button type="button" wire:click="uncheckAll" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded">Hapus Semua</button>
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            @forelse($this->bulkFolderTree as $rootFolder)
+                                @include('livewire.partials.folder-tree-item', ['folder' => $rootFolder, 'level' => 0])
+                            @empty
+                                <p class="text-sm text-gray-400 text-center py-4">Tidak ada folder.</p>
+                            @endforelse
+                        </div>
+                    </div>
+
+                    <button wire:click="saveBulkPermissions" wire:loading.attr="disabled"
+                            class="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-xl flex items-center justify-center gap-2">
+                        <svg wire:loading wire:target="saveBulkPermissions" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                        </svg>
+                        <span>Simpan Semua Centangan dengan Level Terpilih</span>
+                    </button>
+                @endif
+            </div>
         </div>
     </div>
 </div>
