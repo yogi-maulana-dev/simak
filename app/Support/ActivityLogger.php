@@ -57,20 +57,22 @@ class ActivityLogger
             $coords = self::resolveCoordinates($ip);
 
             ActivityLog::create([
-                'user_id'      => $userId,
-                'user_name'    => $userName,
-                'user_email'   => $userEmail,
-                'action'       => $action,
-                'description'  => $description,
-                'subject_type' => $subject ? get_class($subject) : null,
-                'subject_id'   => $subject?->getKey(),
-                'source'       => 'app',
-                'ip_address'   => $ip,
-                'latitude'     => $coords['lat'] ?? null,
-                'longitude'    => $coords['lng'] ?? null,
-                'user_agent'   => substr((string) Request::userAgent(), 0, 500),
-                'metadata'     => empty($metadata) ? null : $metadata,
-                'created_at'   => now(),
+                'user_id'           => $userId,
+                'user_name'         => $userName,
+                'user_email'        => $userEmail,
+                'action'            => $action,
+                'description'       => $description,
+                'subject_type'      => $subject ? get_class($subject) : null,
+                'subject_id'        => $subject?->getKey(),
+                'source'            => 'app',
+                'ip_address'        => $ip,
+                'latitude'          => $coords['lat'] ?? null,
+                'longitude'         => $coords['lng'] ?? null,
+                'location_accuracy' => $coords['accuracy'] ?? null,
+                'location_source'   => $coords['source'] ?? null,
+                'user_agent'        => substr((string) Request::userAgent(), 0, 500),
+                'metadata'          => empty($metadata) ? null : $metadata,
+                'created_at'        => now(),
             ]);
         } catch (\Throwable $e) {
             // Jangan ganggu request user kalau logger error.
@@ -88,18 +90,43 @@ class ActivityLogger
     }
 
     /**
-     * Resolusi koordinat dari IP menggunakan ip-api.com (gratis, di-cache 1 jam per IP).
-     * Mengembalikan ['lat' => float, 'lng' => float] atau [] jika gagal/lokal.
+     * Resolusi koordinat.
+     * Prioritas 1 — cookie GPS dari browser (akurasi 5–15 m, enableHighAccuracy).
+     * Prioritas 2 — IP geolocation via ip-api.com (akurasi ±20–200 km, di-cache 1 jam).
      *
-     * @return array{lat?: float, lng?: float}
+     * @return array{lat?: float, lng?: float, accuracy?: float, source?: string}
      */
     private static function resolveCoordinates(?string $ip): array
     {
+        // ── 1. Browser GPS (cookie _geo_lat / _geo_lng / _geo_acc) ──
+        $cookieLat = $_COOKIE['_geo_lat'] ?? null;
+        $cookieLng = $_COOKIE['_geo_lng'] ?? null;
+        $cookieAcc = $_COOKIE['_geo_acc'] ?? null;
+
+        if (
+            $cookieLat !== null && is_numeric($cookieLat) &&
+            $cookieLng !== null && is_numeric($cookieLng)
+        ) {
+            $lat = (float) $cookieLat;
+            $lng = (float) $cookieLng;
+
+            if ($lat >= -90 && $lat <= 90 && $lng >= -180 && $lng <= 180) {
+                return [
+                    'lat'      => $lat,
+                    'lng'      => $lng,
+                    'accuracy' => ($cookieAcc !== null && is_numeric($cookieAcc) && (float) $cookieAcc > 0)
+                                    ? round((float) $cookieAcc, 2)
+                                    : null,
+                    'source'   => 'gps',
+                ];
+            }
+        }
+
+        // ── 2. Fallback: IP geolocation ──
         if (! $ip || in_array($ip, ['127.0.0.1', '::1', 'localhost'], true)) {
             return [];
         }
 
-        // Private/lokal range — tidak bisa di-geolookup
         if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
             return [];
         }
@@ -112,8 +139,9 @@ class ActivityLogger
 
                 if ($res->successful() && $res->json('status') === 'success') {
                     return [
-                        'lat' => (float) $res->json('lat'),
-                        'lng' => (float) $res->json('lon'),
+                        'lat'    => (float) $res->json('lat'),
+                        'lng'    => (float) $res->json('lon'),
+                        'source' => 'ip',
                     ];
                 }
             } catch (\Throwable) {

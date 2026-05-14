@@ -166,15 +166,34 @@
                                 {{-- Lokasi --}}
                                 <td class="px-4 py-3 hidden xl:table-cell whitespace-nowrap">
                                     @if ($log->latitude !== null && $log->longitude !== null)
-                                        <a href="https://www.google.com/maps?q={{ $log->latitude }},{{ $log->longitude }}"
-                                           target="_blank" rel="noopener noreferrer"
-                                           class="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline font-mono"
-                                           title="Buka di Google Maps">
-                                            <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
-                                            </svg>
-                                            {{ number_format($log->latitude, 5) }}, {{ number_format($log->longitude, 5) }}
-                                        </a>
+                                        <div class="flex flex-col gap-1">
+                                            <a href="https://www.google.com/maps?q={{ $log->latitude }},{{ $log->longitude }}"
+                                               target="_blank" rel="noopener noreferrer"
+                                               class="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline font-mono"
+                                               title="Buka di Google Maps">
+                                                <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                                                </svg>
+                                                {{ number_format($log->latitude, 5) }}, {{ number_format($log->longitude, 5) }}
+                                            </a>
+                                            @if ($log->location_source === 'gps')
+                                                <span class="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                    <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                                                    </svg>
+                                                    GPS
+                                                    @if ($log->location_accuracy !== null)
+                                                        · ±{{ $log->location_accuracy < 1000
+                                                            ? number_format($log->location_accuracy, 0).' m'
+                                                            : number_format($log->location_accuracy / 1000, 1).' km' }}
+                                                    @endif
+                                                </span>
+                                            @elseif ($log->location_source === 'ip')
+                                                <span class="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                                                    ~IP · ±50 km
+                                                </span>
+                                            @endif
+                                        </div>
                                     @else
                                         <span class="text-xs text-gray-400 dark:text-gray-600">—</span>
                                     @endif

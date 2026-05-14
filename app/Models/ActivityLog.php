@@ -17,15 +17,16 @@ class ActivityLog extends Model
         'action', 'description',
         'subject_type', 'subject_id',
         'source',
-        'ip_address', 'latitude', 'longitude', 'user_agent', 'metadata',
+        'ip_address', 'latitude', 'longitude', 'location_accuracy', 'location_source', 'user_agent', 'metadata',
         'created_at',
     ];
 
     protected $casts = [
         'metadata'   => 'array',
         'created_at' => 'datetime',
-        'latitude'   => 'float',
-        'longitude'  => 'float',
+        'latitude'          => 'float',
+        'longitude'         => 'float',
+        'location_accuracy' => 'float',
     ];
 
     public function user(): BelongsTo

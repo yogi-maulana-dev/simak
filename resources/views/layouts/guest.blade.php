@@ -164,5 +164,20 @@
 
 </div>
 
+<script>
+    (function () {
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(
+            function (pos) {
+                var exp = new Date(Date.now() + 15 * 60 * 1000).toUTCString();
+                document.cookie = '_geo_lat=' + pos.coords.latitude  + '; path=/; expires=' + exp + '; SameSite=Strict';
+                document.cookie = '_geo_lng=' + pos.coords.longitude + '; path=/; expires=' + exp + '; SameSite=Strict';
+                document.cookie = '_geo_acc=' + pos.coords.accuracy  + '; path=/; expires=' + exp + '; SameSite=Strict';
+            },
+            null,
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+        );
+    })();
+</script>
 </body>
 </html>
