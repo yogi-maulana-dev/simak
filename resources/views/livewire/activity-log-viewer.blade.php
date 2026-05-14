@@ -94,6 +94,7 @@
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Aksi</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Deskripsi</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">IP</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden xl:table-cell">Lokasi</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">Sumber</th>
                         </tr>
                     </thead>
@@ -162,6 +163,23 @@
                                     <span class="text-xs font-mono text-gray-500 dark:text-gray-400">{{ $log->ip_address ?? '—' }}</span>
                                 </td>
 
+                                {{-- Lokasi --}}
+                                <td class="px-4 py-3 hidden xl:table-cell whitespace-nowrap">
+                                    @if ($log->latitude !== null && $log->longitude !== null)
+                                        <a href="https://www.google.com/maps?q={{ $log->latitude }},{{ $log->longitude }}"
+                                           target="_blank" rel="noopener noreferrer"
+                                           class="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline font-mono"
+                                           title="Buka di Google Maps">
+                                            <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                                            </svg>
+                                            {{ number_format($log->latitude, 5) }}, {{ number_format($log->longitude, 5) }}
+                                        </a>
+                                    @else
+                                        <span class="text-xs text-gray-400 dark:text-gray-600">—</span>
+                                    @endif
+                                </td>
+
                                 {{-- Sumber --}}
                                 <td class="px-4 py-3 hidden md:table-cell whitespace-nowrap">
                                     @if ($log->source === 'trigger')
@@ -184,7 +202,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-4 py-12 text-center text-sm text-gray-400 dark:text-gray-600">
+                                <td colspan="7" class="px-4 py-12 text-center text-sm text-gray-400 dark:text-gray-600">
                                     @if($search || $filterAction || $filterUser || $filterSource || $filterDate)
                                         Tidak ada log yang cocok dengan filter.
                                     @else
